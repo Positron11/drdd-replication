@@ -26,7 +26,7 @@ def _complement_sweep(
 			split      = i + subsize
 			complement = reduced + target[split:]
 
-			if log: log(len(complement), subsize, force=tlen - i <= subsize)
+			if log: log(len(complement) + min(subsize, tlen - i), subsize, force=tlen - i <= subsize)
 
 			# causal restart
 			if oracle(complement): 
