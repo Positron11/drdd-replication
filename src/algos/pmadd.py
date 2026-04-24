@@ -1,5 +1,5 @@
 from math         import exp
-from random       import random
+from random       import Random
 from typing       import TypeVar
 from core.oracle  import Oracle
 from core.logging import RateLog
@@ -47,6 +47,7 @@ def _complement_sweep(
 	M      :int,
 	history:list[int],
 	oracle :Oracle[T],
+	rng    :Random,
 	log    :RateLog | None = None) -> tuple[list[tuple[int, T]], int, int]:
 
 	"""Identify benign chunks of target with PMA-guided skipping."""
@@ -73,7 +74,7 @@ def _complement_sweep(
 			skip_eligible  = _check_dominated(candidate_bits, history)
 
 			# PMA-guided skip
-			if skip_eligible and _confidence(M) > random(): interesting = False
+			if skip_eligible and _confidence(M) > rng.random(): interesting = False
 
 			else:
 				interesting = oracle([delta for _, delta in complement])			
@@ -106,10 +107,12 @@ def _complement_sweep(
 def minimize(
 	target:list[T],
 	oracle:Oracle[T],
+	seed  :int            = 0,
 	log   :RateLog | None = None) -> list[T]:
 
 	"""PMA-enhanced Delta-Debugging algorithm over an ordered sequence."""
 
+	rng         = Random(seed)
 	minimized   = list(enumerate(target))
 	granularity = 2
 
@@ -125,8 +128,9 @@ def minimize(
 			M           = M,
 			history     = history,
 			oracle      = oracle,
+			rng         = rng,
 			log         = log
-		
+
 		)
 
 		if granularity == len(minimized): break

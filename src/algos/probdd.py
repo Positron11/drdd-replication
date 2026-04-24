@@ -8,14 +8,14 @@ from core.logging import RateLog
 T = TypeVar("T")
 
 
-def _sort_indices(probs:np.ndarray) -> np.ndarray:
+def _sort_indices(probs:np.ndarray, rng:np.random.Generator) -> np.ndarray:
 	"""Sort active elements by probability in ascending order."""
 
 	active = np.where(probs < 1.0)[0]
-	
+
 	# shuffle entire array
-	np.random.shuffle(active)                               
-	
+	rng.shuffle(active)
+
 	# stable sort preserves shuffled order within same-p groups
 	return active[np.argsort(probs[active], kind='stable')]
 
@@ -32,10 +32,10 @@ def _update_fail_probs(indices:np.ndarray, probs:np.ndarray) -> None:
 	probs[indices] = new_p
 
 
-def _select_subset(probs:np.ndarray) -> np.ndarray:
+def _select_subset(probs:np.ndarray, rng:np.random.Generator) -> np.ndarray:
 	"""Select a subset via probabilities to test for removal."""
 
-	order     = _sort_indices(probs)
+	order     = _sort_indices(probs, rng)
 	best_gain = -1.0
 	best_size = 0
 	p_pass    = 1.0
@@ -55,15 +55,17 @@ def minimize(
 	target:list[T],
 	oracle:Oracle[T],
 	p_0   :float          = 0.1,
+	seed  :int            = 0,
 	log   :RateLog | None = None) -> list[T]:
 
 	"""Probabilistic Delta-Debugging algorithm over an ordered sequence."""
 
+	rng       = np.random.default_rng(seed)
 	minimized = list(target)
 	probs     = np.full(len(minimized), p_0, dtype=np.float64)
 
 	while True:
-		subset = _select_subset(probs)
+		subset = _select_subset(probs, rng)
 
 		# terminate when every remaining element has probability 1
 		if not minimized or len(subset) == 0: break
