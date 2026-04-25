@@ -1,6 +1,6 @@
 # Predicates
 
-Two families of real-world bug reproducers. Each predicate is a directory containing a `config.toml` and the input file(s) needed to reproduce the bug.
+Four families of real-world bug reproducers. Each predicate is a directory containing a `config.toml` and the input file(s) needed to reproduce the bug.
 
 ## XML
 
@@ -11,8 +11,8 @@ Five cases (`ticket-1e9bc83-{1..5}`) sourced from the artifact of Zhang et al. (
 ```
 ticket-1e9bc83-<n>/
   input.xml          — original input
-  input.pick/        — pre-shrunk seed variants (variant k ≤ k KB)
-    1.xml … 5.xml
+  input.pick/        — pre-shrunk seed variants (variant k ≤ 2k KB)
+    1.xml ... 3.xml
   query.xq           — discriminating XQuery
   config.toml        — good_version / bad_version
 lib/                 — BaseX JARs
@@ -22,7 +22,7 @@ lib/                 — BaseX JARs
 
 ```bash
 make -C predicates/xml clean     # remove all input.pick/ dirs
-make -C predicates/xml           # all 5 cases × 5 variants
+make -C predicates/xml           # all 5 cases × 3 variants
 ```
 
 ## FFmpeg
@@ -35,16 +35,15 @@ ASAN-detected bugs across two FFmpeg commits. Each predicate fires when the inst
 | ticket-[10688](https://trac.ffmpeg.org/ticket/10688)/ | `bwdif` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10691](https://trac.ffmpeg.org/ticket/10691)/ | `dialoguenhance` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10699](https://trac.ffmpeg.org/ticket/10699)/ | `blurdetect` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
-| ticket-[10700](https://trac.ffmpeg.org/ticket/10700)/ | `afwtdn` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
+| x-ticket-[10700](https://trac.ffmpeg.org/ticket/10700)/ | `afwtdn` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10701](https://trac.ffmpeg.org/ticket/10701)/ | `colorcorrect` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10702](https://trac.ffmpeg.org/ticket/10702)/ | `transpose,gradfun` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
-| ticket-[10743](https://trac.ffmpeg.org/ticket/10743)/ | `doubleweave` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
+| x-ticket-[10743](https://trac.ffmpeg.org/ticket/10743)/ | `doubleweave` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10744](https://trac.ffmpeg.org/ticket/10744)/ | `alimiter` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10745](https://trac.ffmpeg.org/ticket/10745)/ | `swaprect` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10746](https://trac.ffmpeg.org/ticket/10746)/ | `stereowiden` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10747](https://trac.ffmpeg.org/ticket/10747)/ | `stereotools` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10749](https://trac.ffmpeg.org/ticket/10749)/ | `showspectrumpic` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
-| ticket-[10753](https://trac.ffmpeg.org/ticket/10753)/ | `areverse` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10754](https://trac.ffmpeg.org/ticket/10754)/ | `separatefields` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10756](https://trac.ffmpeg.org/ticket/10756)/ | `showwaves` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10758](https://trac.ffmpeg.org/ticket/10758)/ | `minterpolate` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
@@ -71,3 +70,79 @@ ASAN_OPTIONS=halt_on_error=1 ./ffmpeg_g-466799d4f5 -y -i ../ticket-10702/input  
 ```
 
 `halt_on_error=1` ensures a non-zero exit on any sanitizer report.
+
+## Binutils
+
+Crash-triggering inputs for GNU binutils tools, sourced from [Feiyang et al.](https://github.com/FreeFlyingSheep/delta-debugging/) artifact. The predicate fires when the target tool dies on a signal (SEGV) or emits a glibc corruption message on the input file.
+
+| Directory | Bug | Tool | Args | Commit |
+|-----------|-----|------|------|--------|
+| bug-[20605](https://sourceware.org/bugzilla/show_bug.cgi?id=20605)/    | segfault | x86_64-mingw32-objdump | `-x`   | [`2870b1b`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=2870b1ba83fc0e0ee7eadf72d614a7ec4591b169) |
+| bug-[21135](https://sourceware.org/bugzilla/show_bug.cgi?id=21135)/    | segfault | aarch64-linux-readelf  | `-zR3` | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21136](https://sourceware.org/bugzilla/show_bug.cgi?id=21136)/    | segfault | aarch64-linux-readelf  | `-da`  | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21138](https://sourceware.org/bugzilla/show_bug.cgi?id=21138)/    | segfault | aarch64-linux-readelf  | `-R6`  | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21139](https://sourceware.org/bugzilla/show_bug.cgi?id=21139)/    | glibc abort (`corrupted top size`) | aarch64-linux-readelf | `-w` | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21143](https://sourceware.org/bugzilla/show_bug.cgi?id=21143)/    | segfault | aarch64-linux-readelf  | `-R6`  | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21144](https://sourceware.org/bugzilla/show_bug.cgi?id=21144)/    | segfault | aarch64-linux-readelf  | `-w`   | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21145](https://sourceware.org/bugzilla/show_bug.cgi?id=21145)/    | segfault | aarch64-linux-readelf  | `-w`   | [`53f7e8e`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=53f7e8ea7fad1fcff1b58f4cbd74e192e0bcbc1d) |
+| bug-[21409-1](https://sourceware.org/bugzilla/show_bug.cgi?id=21409)/    | segfault | x86_64-linux-objdump   | `-SD`  | [`a6c21d4`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=a6c21d4a553de184562fd8409a5bcd3f2cc2561a) |
+| bug-21409-2/ | segfault | x86_64-linux-objdump   | `-SD`  | [`a6c21d4`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=a6c21d4a553de184562fd8409a5bcd3f2cc2561a) |
+| bug-[21414](https://sourceware.org/bugzilla/show_bug.cgi?id=21414)/    | segfault | x86_64-linux-objcopy   | `-Gs`  | [`a6c21d4`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=a6c21d4a553de184562fd8409a5bcd3f2cc2561a) |
+| bug-[30886](https://sourceware.org/bugzilla/show_bug.cgi?id=30886)/    | segfault | x86_64-linux-nm        | `-D`   | [`be8e831`](https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=be8e83130996a5300e15b415ed290de1af910361) |
+
+Four distinct binutils commits are built, each with the `--target` configuration that produces the toolchain variant for that bug. All resulting binaries are native x86_64 — the target triple affects only which object-file formats the tool can parse.
+
+### Build
+
+```bash
+make -C predicates/binutils        # clones binutils-gdb, builds all four commits
+```
+
+Clones `binutils-gdb.git` once, then for each configured commit checks out the pinned SHA into a dedicated `build-<short>/` directory, configures with the commit's `--target` (plus `--disable-gdb --disable-sim --disable-gprofng --disable-nls` and `MAKEINFO=true` to bypass missing texinfo), and copies the unprefixed `binutils/<tool>` to `lib/<target>-<tool>-<short>`. Builds run sequentially (`.NOTPARALLEL:`) because all four share one clone.
+
+### Reproduce
+
+```bash
+./predicates/binutils/lib/aarch64-linux-readelf-53f7e8ea -zR3 predicates/binutils/bug-21135/input   # SIGSEGV
+./predicates/binutils/lib/aarch64-linux-readelf-53f7e8ea -w   predicates/binutils/bug-21139/input   # "malloc(): corrupted top size"
+./predicates/binutils/lib/x86_64-linux-objdump-a6c21d4a   -SD predicates/binutils/bug-21409-1/input # SIGSEGV
+```
+
+## CrashJS
+
+JavaScript crash reproducers from the [CrashJS](https://gitlab.ecs.vuw.ac.nz/engr690/crashjs) dataset, specifically the `syntest-collected/lodash` sub-corpus: 11 mocha test files that crash an instrumented build of lodash. The predicate fires when running the candidate test under our long-lived Node worker produces the same `(errType, errMsg, top-lodash-frame)` triple recorded for the bug.
+
+| Directory | Crash | Top frame |
+|-----------|-------|-----------|
+| lodash-1/  | `TypeError: customizer is not a function` | `.internal/equalArrays.js` |
+| lodash-2/  | `TypeError: equalFunc is not a function`  | `.internal/equalArrays.js` |
+| lodash-3/  | `TypeError: customizer is not a function` | `.internal/equalArrays.js` |
+| lodash-4/  | `TypeError: equalFunc is not a function`  | `.internal/equalArrays.js` |
+| lodash-5/  | `TypeError: equalFunc is not a function`  | `.internal/equalArrays.js` |
+| lodash-6/  | `TypeError: string.charCodeAt is not a function` | `.internal/stringToPath.js` |
+| lodash-7/  | `TypeError: string.charCodeAt is not a function` | `.internal/stringToPath.js` |
+| lodash-8/  | `TypeError: iteratee is not a function`   | `transform.js` |
+| lodash-9/  | `TypeError: iteratee is not a function`   | `transform.js` |
+| lodash-10/ | `TypeError: iteratee is not a function`   | `transform.js` |
+| lodash-11/ | `TypeError: iteratee is not a function`   | `transform.js` |
+
+Inputs are JS source (444 B – 2356 B). The original dataset's `require = require('esm')(module)` shim line is stripped during ingestion — modern Node parses the resulting file natively as ESM.
+
+### Build
+
+```bash
+make -C predicates/crashjs           # npm install in lib/, symlink instrumented lodash
+```
+
+Requires system `node` and `npm` (anything modern; tested on Node 22). Installs `mocha`, `chai`, `chai-as-promised`, `esm` into `predicates/crashjs/lib/node_modules/` — entirely sandboxed, no global writes. Symlinks `lib/instrumented` to the `crashjs/syntest-collected/lodash/instrumented/` checkout so the test files' `import "../instrumented/lodash/..."` paths resolve.
+
+### Reproduce
+
+```bash
+cd predicates/crashjs/lib
+echo "$PWD/../lodash-9/input" | node worker.mjs
+# {"ready":true}
+# {"ok":false,"errType":"TypeError","errMsg":"iteratee is not a function","topFile":"transform.js"}
+```
+
+The mocha-free [worker](crashjs/lib/worker.mjs) reads test paths from stdin one per line, uses ESM cache-busting (`?t=<counter>`) to pick up in-place mutations, and emits one JSON result line per request. Lodash modules stay cached across calls — only the test file is reloaded.

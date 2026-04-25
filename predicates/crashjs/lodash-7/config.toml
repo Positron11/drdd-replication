@@ -1,0 +1,5 @@
+bug      = "lodash-7"
+errType  = "TypeError"
+errMsg   = "string.charCodeAt is not a function"
+topFile  = ".internal/stringToPath.js"
+timeout  = 10

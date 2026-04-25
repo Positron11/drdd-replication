@@ -1,0 +1,5 @@
+commit  = "53f7e8ea"
+binary  = "aarch64-linux-readelf"
+argv    = ["-w"]
+signal  = "SIGSEGV"
+timeout = 10

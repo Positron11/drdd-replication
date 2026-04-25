@@ -1,0 +1,5 @@
+commit  = "a6c21d4a"
+binary  = "x86_64-linux-objdump"
+argv    = ["-SD"]
+signal  = "SIGSEGV"
+timeout = 10

@@ -9,20 +9,22 @@ This repository implements five Delta Debugging algorithms and benchmarks them a
 | Algorithm | Strategy | Literature |
 |-----------|----------|------------|
 | [`DDMin`](src/algos/ddmin.py) | Classical binary search over subsets | -
+| [`DDPrime`](src/algos/ddprime.py) | Halving complement sweep + causal chain scan | -
 | [`ProbDD`](src/algos/probdd.py) | Per-element removal probabilities, updated on failure | [Wang et al.](https://doi.org/10.1145/3468264.3468625)
 | [`CDD`](src/algos/cdd.py) | Adaptive subset sizing with probabilistic decay | [Zhang et al.](https://doi.org/10.1109/ICSE55347.2025.00117)
 | [`PmaDD`](src/algos/pmadd.py) | Monotonicity-aware skipping via confidence scoring | [Tao et al.](https://doi.org/10.1145/3756681.3756940)
-| [`TTMin`](src/algos/ttmin.py) | Alternating prefix-zip and complement sweep | -
 
 > [!NOTE] 
-> The DDMin variant used here (standalone and as the base for TTMin and PmaDD) is a recent iteration not yet attached to published literature. TTMin is an original contribution by researchers associated with this project.
+> DDPrime is an original contribution by researchers associated with this project.
 
 ## Predicates
 
 | Family | Cases | Bug type |
 |--------|-------|----------|
-| [XML](predicates/xml/) | 5 cases $\times$ 5 variants | XQuery output discrepancy between BaseX versions |
-| [FFmpeg](predicates/ffmpeg/) | 17 cases | ASAN heap-buffer-overflow / LeakSanitizer |
+| [XML](predicates/xml/) | 5 cases $\times$ 3 variants | XQuery output discrepancy between BaseX versions |
+| [FFmpeg](predicates/ffmpeg/) | 14 cases | ASAN heap-buffer-overflow / LeakSanitizer |
+| [Binutils](predicates/binutils/) | 12 cases | SIGSEGV / glibc heap corruption in `readelf`, `objdump`, `objcopy`, `nm` |
+| [CrashJS](predicates/crashjs/) | 11 cases | TypeError reproduction in instrumented `lodash` via Syntest-generated mocha tests |
 
 ## Setup
 

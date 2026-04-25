@@ -3,6 +3,8 @@ benchmark/runs
 
 # Artifacts
 predicates/ffmpeg/lib/
+predicates/binutils/lib/
+predicates/crashjs/lib/
 predicates/xml/ticket-*/input.pick/
 
 # Stray outputs

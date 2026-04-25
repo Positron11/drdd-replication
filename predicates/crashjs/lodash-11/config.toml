@@ -1,0 +1,5 @@
+bug      = "lodash-11"
+errType  = "TypeError"
+errMsg   = "iteratee is not a function"
+topFile  = "transform.js"
+timeout  = 10

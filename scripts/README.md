@@ -13,13 +13,13 @@ usage: minimize_xml <predicate_dir> [--input FILE] [--output FILE]
   predicate_dir   path to a predicate directory (must contain config.toml and query.xq)
   --input         input filename within predicate_dir  (default: input.xml)
   --output        output filename within predicate_dir (default: input.min.xml)
-  --algorithm     one of: cdd, ddmin, pmadd, probdd, ttmin  (default: ddmin)
+  --algorithm     one of: cdd, ddmin, ddprime, pmadd, probdd  (default: ddmin)
   --verbose       print per-step progress
 ```
 
 ```bash
 scripts/minimize_xml predicates/xml/ticket-1e9bc83-1 \
-    --input input.pick/1.xml --algorithm ttmin --verbose
+    --input input.pick/1.xml --algorithm ddprime --verbose
 ```
 
 ## `minimize_ffmpeg`
@@ -37,6 +37,40 @@ usage: minimize_ffmpeg <predicate_dir> [--input FILE] [--output FILE]
 ```bash
 scripts/minimize_ffmpeg predicates/ffmpeg/ticket-10699 \
     --algorithm pmadd --verbose
+```
+
+## `minimize_binutils`
+
+Minimizes a binary file against a binutils crash predicate. The oracle reruns a pinned binutils tool on each candidate and considers the bug reproduced when the process dies on a configured signal (`signal = "SIGSEGV"`) or emits a needle substring in stderr/stdout (`needle = "..."`).
+
+```
+usage: minimize_binutils <predicate_dir> [--input FILE] [--output FILE]
+                         [--algorithm ALGO] [--verbose]
+
+  --input         input filename within predicate_dir  (default: input)
+  --output        output filename within predicate_dir (default: input.min)
+```
+
+```bash
+scripts/minimize_binutils predicates/binutils/bug-21135 \
+    --algorithm ddmin --verbose
+```
+
+## `minimize_crashjs`
+
+Minimizes a JavaScript test file against a CrashJS lodash crash predicate. The oracle drives a long-lived `node worker.mjs` process via stdin/stdout pipes; each candidate is written into a sandboxed staging file under `lib/case-staging/` and ESM-cache-busted with a per-call counter. Reproduction is declared when the worker reports the configured `(errType, errMsg, topFile)` triple.
+
+```
+usage: minimize_crashjs <predicate_dir> [--input FILE] [--output FILE]
+                        [--algorithm ALGO] [--verbose]
+
+  --input         input filename within predicate_dir  (default: input)
+  --output        output filename within predicate_dir (default: input.min)
+```
+
+```bash
+scripts/minimize_crashjs predicates/crashjs/lodash-9 \
+    --algorithm ddmin --verbose
 ```
 
 ## `cherrypick_xml`
