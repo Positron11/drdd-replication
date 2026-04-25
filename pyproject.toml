@@ -12,7 +12,7 @@ description = "Delta Debugging algorithm implementations and benchmark infrastru
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-	{ name = "Aarush Kumbhakern" },
+	{ name = "Anonymous Authors" },
 ]
 dependencies = [
 	"defusedxml",

@@ -15,7 +15,7 @@ This repository implements five Delta Debugging algorithms and benchmarks them a
 | [`PmaDD`](src/algos/pmadd.py) | Monotonicity-aware skipping via confidence scoring | [Tao et al.](https://doi.org/10.1145/3756681.3756940)
 
 > [!NOTE] 
-> DDPrime is an original contribution by researchers associated with this project.
+> DDPrime is an original contribution introduced in the accompanying paper.
 
 ## Predicates
 

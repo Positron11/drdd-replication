@@ -73,7 +73,7 @@ ASAN_OPTIONS=halt_on_error=1 ./ffmpeg_g-466799d4f5 -y -i ../ticket-10702/input  
 
 ## Binutils
 
-Crash-triggering inputs for GNU binutils tools, sourced from [Feiyang et al.](https://github.com/FreeFlyingSheep/delta-debugging/) artifact. The predicate fires when the target tool dies on a signal (SEGV) or emits a glibc corruption message on the input file.
+Crash-triggering inputs for GNU binutils tools, sourced from a prior delta-debugging artifact (citation withheld for double-blind review). The predicate fires when the target tool dies on a signal (SEGV) or emits a glibc corruption message on the input file.
 
 | Directory | Bug | Tool | Args | Commit |
 |-----------|-----|------|------|--------|
