@@ -1,30 +1,47 @@
-# Sandboxed install of mocha-free worker deps + symlink to instrumented lodash tree.
+# Self-contained setup for the CrashJS lodash predicates.
 #
-# Requires system `node` and `npm` (does not install or modify them).
-# Everything else lives under lib/ and is removed by `make clean`.
+# Downloads the CrashJS dataset (instrumented lodash tree) and stages the
+# mocha-free worker into lib/. The worker imports only Node builtins and the
+# tests import the instrumented lodash by relative path, so there are no npm
+# dependencies. Like the other predicate Makefiles, nothing under lib/ or
+# build/ is tracked; worker.mjs is the tracked source and this wires it up.
+#
+# Requires system `node`, `curl`, and `tar` (does not install them).
 
+DATASET_URL := https://zenodo.org/records/10530515/files/crashjs.tar.gz?download=1
+SRCDIR      := build
 LIB         := lib
-DATASET     := ../../crashjs/syntest-collected/lodash/instrumented
+DATASET     := $(SRCDIR)/crashjs/syntest-collected/lodash/instrumented
 
 .PHONY: all clean distclean check-tools
 
-all: $(LIB)/node_modules $(LIB)/instrumented
+all: $(LIB)/worker.mjs $(LIB)/instrumented
 
 check-tools:
-	@command -v node >/dev/null || { echo "error: node not found on PATH" >&2; exit 1; }
-	@command -v npm  >/dev/null || { echo "error: npm not found on PATH"  >&2; exit 1; }
+	@for t in node curl tar; do \
+		command -v $$t >/dev/null 2>&1 || { echo "error: $$t not found on PATH" >&2; exit 1; }; \
+	done
 
-$(LIB)/node_modules: $(LIB)/package.json | check-tools
-	cd $(LIB) && npm install --no-audit --no-fund --prefer-offline
+$(LIB):
+	mkdir -p $(LIB)
 
-$(LIB)/instrumented:
-	@if [ ! -d $(DATASET) ]; then \
-		echo "error: dataset not found at $(DATASET) (expected the crashjs/ dataset checkout)" >&2; \
-		exit 1; \
-	fi
-	ln -sfn $(realpath $(DATASET)) $(LIB)/instrumented
+# mocha-free worker (staged from the tracked worker.mjs source)
+$(LIB)/worker.mjs: worker.mjs | $(LIB)
+	cp $< $@
+
+# dataset: download + extract the instrumented lodash tree
+$(SRCDIR)/.extracted: | check-tools
+	mkdir -p $(SRCDIR)
+	curl -L --fail -o $(SRCDIR)/crashjs.tar.gz "$(DATASET_URL)"
+	tar -xzf $(SRCDIR)/crashjs.tar.gz -C $(SRCDIR)
+	touch $@
+
+$(LIB)/instrumented: $(SRCDIR)/.extracted | $(LIB)
+	@test -d $(DATASET) || { echo "error: dataset not found at $(DATASET) after extract" >&2; exit 1; }
+	ln -sfn $(abspath $(DATASET)) $@
 
 clean:
-	rm -rf $(LIB)/node_modules $(LIB)/instrumented $(LIB)/case-staging $(LIB)/package-lock.json
+	rm -rf $(LIB)
 
 distclean: clean
+	rm -rf $(SRCDIR)

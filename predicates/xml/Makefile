@@ -2,7 +2,7 @@ REPO_ROOT  := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 SCRIPTS    := $(REPO_ROOT)/scripts
 PYTHONPATH := $(REPO_ROOT)/src
 
-CASES    := $(wildcard ticket-*)
+CASES    := $(wildcard cases/case-*)
 VARIANTS := 1 2 3
 
 ALL := $(foreach c,$(CASES),$(foreach v,$(VARIANTS),$(c)/input.pick/$(v).xml))

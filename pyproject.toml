@@ -6,7 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dd-lab"
+name = "drdd-replication"
 version = "0.1.0"
 description = "Delta Debugging algorithm implementations and benchmark infrastructure"
 readme = "README.md"
@@ -15,8 +15,9 @@ authors = [
 	{ name = "Anonymous Authors" },
 ]
 dependencies = [
-	"defusedxml",
-	"saxonche",
+	"defusedxml >= 0.7.1",    # cherrypick_xml (safe XML parsing)
+	"saxonche   >= 12.9.0",   # xml driver (reference XQuery engine)
+	"numpy      >= 1.24",     # probdd reducer (probability vectors)
 ]
 
 [tool.setuptools]

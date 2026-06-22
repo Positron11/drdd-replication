@@ -1,5 +1,0 @@
-commit  = "be8e8313"
-binary  = "x86_64-linux-nm"
-argv    = ["-D"]
-signal  = "SIGSEGV"
-timeout = 10

@@ -1,31 +1,38 @@
-"""Generic benchmark harness for DD minimizer benchmarks."""
-
-import csv
 import hashlib
-import subprocess
+import sys
 import time
 
-from datetime        import datetime, timezone, timedelta
-from dataclasses     import dataclass
-from pathlib         import Path
-from typing          import Callable
-from drivers.logging import MinimizerLog
-from bench.logging   import HarnessLog
-from utils.fmt       import fmt_bytes
+from pathlib import Path
+
+from datetime       import datetime, timezone, timedelta
+from dataclasses    import dataclass
+from typing         import Callable
+from core.oracle    import Oracle
+from core.errors    import DDError, ConfigError
+from reducers       import REDUCERS, PROBABILISTIC
+from loader         import load_dataset, Family, Case
+from runtime.runner import run_minimization
+from bench.results  import RunResult, write_csv
+from bench.logging  import TerminalView, FileView
+
+
+_INTERRUPTED = "Interrupted"
 
 
 @dataclass
 class BenchTask:
-	fn        :Callable[..., dict]
-	input_path:Path
-	algorithm :str
 	label     :str
+	input_path:Path
+	reducer   :str
+	reducer_fn:Callable
+	oracle    :Oracle
+	kwargs    :dict
 
 
 def _sha256_hex(path:Path) -> str:
 	"""Compute hash of file contents."""
 
-	try:    return hashlib.sha256(path.read_bytes()).hexdigest()
+	try: return hashlib.sha256(path.read_bytes()).hexdigest()
 	except FileNotFoundError: return ""
 
 
@@ -36,86 +43,120 @@ def _file_size_bytes(path:Path) -> int:
 	except FileNotFoundError: return -1
 
 
-def _run_one(task:BenchTask, log:HarnessLog) -> dict:
-	"""Run one minimization and gather metrics."""
+def _run_one(task:BenchTask, views:list, started:datetime) -> RunResult:
+	"""Run one minimization and capture its outcome."""
 
-	ts_start   = datetime.now(timezone.utc)
 	start_perf = time.perf_counter()
+	minimized  = None
+	error      = None
 
-	result = None
+	try: minimized = run_minimization(
 
-	try: result = task.fn(log=log)
+		data    = task.input_path.read_bytes(),
+		reducer = task.reducer_fn,
+		oracle  = task.oracle,
+		views   = views,
 
-	except KeyboardInterrupt: result = { "error": "interrupted" }
+		**task.kwargs
 
-	except Exception as e: result = { "error": str(e) }
+	)
 
-	finally: end_perf = time.perf_counter()
+	except KeyboardInterrupt: error = _INTERRUPTED
+	except Exception as e:    error = f"{type(e).__name__}: {e}"
 
-	wall_time = end_perf - start_perf
-	ts_end    = ts_start + timedelta(seconds=wall_time)
+	finally: wall_time = time.perf_counter() - start_perf
+
+	return RunResult(
+
+		started          = started,
+		wall_time        = wall_time,
+		calls            = task.oracle.calls,
+		minimized_length = len(minimized) if minimized is not None else None,
+		error            = error,
+
+	)
+
+
+def _row(task:BenchTask, result:RunResult) -> dict:
+	"""Flatten a task and its result into a CSV row."""
+
+	ok = result.minimized_length is not None
 
 	row = {
-		
-		"ts_start"          : ts_start.isoformat(),
-		"ts_end"            : ts_end.isoformat(),
+
+		"ts_start"          : result.started.isoformat(),
+		"ts_end"            : (result.started + timedelta(seconds=result.wall_time)).isoformat(),
 		"predicate"         : task.label,
 		"input_bytes"       : _file_size_bytes(task.input_path),
 		"input_sha256"      : _sha256_hex(task.input_path),
-		"algorithm"         : task.algorithm,
-		"minimized_length"  : (result or {}).get("minimized_length", ""),
-		"oracle_invocations": (result or {}).get("oracle_invocations", "")
-	
+		"reducer"           : task.reducer,
+		"minimized_length"  : result.minimized_length if ok else "",
+		"oracle_invocations": result.calls            if ok else "",
+
 	}
 
-	if result and result.get("error"): row["error"] = result["error"]
+	if result.error: row["error"] = result.error
 
 	return row
 
 
-def _write_csv(rows:list[dict], out_csv:Path) -> None:
-	"""Write a list of rows to an output CSV."""
+def _run_task(i:int, n_tasks:int, task:BenchTask, log_dir:Path) -> RunResult:
+	"""Run one task against its own log file and a live terminal view."""
 
-	out_csv.parent.mkdir(parents=True, exist_ok=True)
+	log_path    = log_dir / f"{i:04d}_{task.label}_{task.reducer}.log"
+	started     = datetime.now(timezone.utc)
+	counter_str = f"{i + 1:>4}/{n_tasks}"
+	input_bytes = _file_size_bytes(task.input_path)
 
-	fieldnames = []
+	with log_path.open("w", encoding="utf-8", buffering=1) as lf:
 
-	for row in rows:
-		for k in row.keys():
-			if k not in fieldnames: fieldnames.append(k)
+		# user-facing logger
+		terminal_v = TerminalView(
 
-	with out_csv.open("w", newline="", encoding="utf-8") as f:
-		writer = csv.DictWriter(f, fieldnames=fieldnames)
+			input_size  = input_bytes,
+			counter_str = counter_str,
+			reducer     = task.reducer,
+			label       = task.label
 
-		writer.writeheader()
+		)
 
-		for r in rows:
-			writer.writerow(r)
+		# back-end logfile logger
+		file_v = FileView(
+
+			stream     = lf,
+			input_size = input_bytes,
+			reducer    = task.reducer,
+			label      = task.label,
+			started    = started,
+			interval   = 5.0
+
+		)
+
+		# execute test
+		result = _run_one(
+
+			task    = task,
+			views   = [terminal_v, file_v],
+			started = started
+
+		)
+
+		# close loggers
+		terminal_v.done(result)
+		file_v.done(result)
+
+	return result
 
 
-def result_dir(label: str) -> str:
-	"""Construct result directory name."""
+def _run_all(tasks:list[BenchTask], run_dir:Path) -> None:
+	"""Run a series of benchmark tasks, writing per-task logs and a summary CSV."""
 
-	ts     = datetime.now().strftime("%d-%m-%Y_%H:%M")
-	commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+	if not tasks: print("No tasks to run."); return
 
-	return f"{label}_{ts}_git-{commit}"
+	n_tasks   = len(tasks)
+	log_dir   = run_dir / "logs"
+	csv_path  = run_dir / "result.csv"
 
-
-def run_all(tasks:list[BenchTask], run_dir:Path) -> None:
-	"""Run a series of benchmark tasks."""
-
-	if not tasks:
-		print("No tasks to run.")
-		
-		return
-
-	n_tasks = len(tasks)
-	out_csv = run_dir / "result.csv"
-	log_dir = run_dir / "logs"
-	algo_w  = max(len(t.algorithm) for t in tasks)
-
-	run_dir.mkdir(parents=True, exist_ok=True)
 	log_dir.mkdir(parents=True, exist_ok=True)
 
 	rows      = []
@@ -123,48 +164,14 @@ def run_all(tasks:list[BenchTask], run_dir:Path) -> None:
 
 	try:
 		for i, task in enumerate(tasks):
-			input_bytes = _file_size_bytes(task.input_path)
-			counter_str = f"{i + 1:>{len(str(n_tasks))}}/{n_tasks}"
-			size_str    = fmt_bytes(input_bytes)
+			result = _run_task(i, n_tasks, task, log_dir)
+			
+			rows.append(_row(task, result))
 
-			log_path = log_dir / f"{i:04d}_{task.label}_{task.algorithm}.log"
+			# rewrite after every task so an unexpected crash can't lose the whole run
+			write_csv(rows, csv_path)
 
-			with log_path.open("w", encoding="utf-8", buffering=1) as lf:
-				ts_start = datetime.now(timezone.utc)
-
-				lf.write(f"predicate  : {task.label}\n")
-				lf.write(f"algorithm  : {task.algorithm}\n")
-				lf.write(f"input_size : {fmt_bytes(input_bytes)}\n")
-				lf.write(f"started    : {ts_start.isoformat()}\n\n")
-
-				log = HarnessLog(
-
-					file_log    = MinimizerLog(stream=lf, interval=5.0),
-					counter_str = counter_str,
-					algo        = task.algorithm,
-					algo_w      = algo_w,
-					label       = task.label,
-					size_str    = size_str,
-
-				)
-
-				rows.append(_run_one(task, log))
-				
-				row     = rows[-1]
-				elapsed = (datetime.fromisoformat(row["ts_end"]) - datetime.fromisoformat(row["ts_start"])).total_seconds()
-
-				log.finalize(row)
-
-				if row.get("error"): lf.write(f"\n\n{row['error'].upper()}\n")
-
-				lf.write(f"\nminimized : {row.get('minimized_length', 'N/A')} B\n")
-				lf.write(f"oracle    : {row.get('oracle_invocations', 'N/A')} invocations\n")
-				lf.write(f"elapsed   : {elapsed:.1f}s\n")
-
-				if row.get("error") == "interrupted":
-					interrupt = True
-					
-					break
+			if result.error == _INTERRUPTED: interrupt = True; break
 
 	except KeyboardInterrupt: interrupt = True
 
@@ -173,4 +180,71 @@ def run_all(tasks:list[BenchTask], run_dir:Path) -> None:
 	if interrupt: print(f"\nInterrupted after {len(rows)} task(s) ({errs} failed).\n")
 	else:         print(f"\nCompleted {n_tasks} task(s) ({errs} failed).\n")
 
-	if rows: _write_csv(rows, out_csv)
+	if rows: write_csv(rows, csv_path)
+
+
+def _exit(message:str) -> None:
+	"""Report a setup failure and abort the benchmark."""
+
+	print(f"  {message}", file=sys.stderr)
+
+	sys.exit(1)
+
+
+def _build_tasks(
+		family  :Family, 
+		cases   :list[Case], 
+		reducers:list[str]) -> list[BenchTask]:
+	
+	"""Every (selected case x reducer) as a ready-to-run BenchTask, oracle built and validated here."""
+
+	tasks = []
+
+	for c in cases:
+		for reducer in reducers:
+
+			# constructing the oracle surfaces any setup failure for this case
+			# (ConfigError, or anything a third-party oracle.py raises -> DDError)
+			try: oracle = family.oracle(c.config)
+			except DDError as e: _exit(f"{c.id}: {e}")
+
+			tasks.append(BenchTask(
+
+				label      = c.id,
+				input_path = c.path,
+				reducer    = reducer,
+				reducer_fn = REDUCERS[reducer],
+				oracle     = oracle,
+				kwargs     = {"p_0": family.tuning["p_0"]} if (reducer in PROBABILISTIC and "p_0" in family.tuning) else {},
+
+			))
+
+	return tasks
+
+
+def run_family_benchmark(
+		predicates_root:Path,
+		name           :str,
+		reducers       :list[str],
+		ids            :list[str],
+		run_dir        :Path) -> None:
+
+	"""Run `reducers` x selected cases from a dataset's manifest.json."""
+
+	family   = load_dataset(predicates_root / name)
+	selected = set(ids) if ids else family.cases.keys()
+
+	# materialize each selected case (case() surfaces an unknown id or a missing input)
+	try: cases = [family.case(i) for i in selected]
+	except ConfigError as e: _exit(str(e))
+
+	print(
+
+		f"\n{name} Benchmark\n\n"
+		f"cases      : {len(cases)}\n"
+		f"reducers   : {', '.join(reducers)}\n"
+		f"output     : {run_dir}\n"
+
+	)
+
+	_run_all(_build_tasks(family, cases, reducers), run_dir)

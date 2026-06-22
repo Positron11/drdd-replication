@@ -1,0 +1,113 @@
+{
+	"name": "crashjs",
+	"description": "Node.js lodash crashes: lodash exercised on adversarial inputs. Each case reproduces a recorded TypeError thrown from a specific lodash module.",
+	"source": "https://zenodo.org/records/10530515",
+	"common": {
+		"errType": "TypeError",
+		"timeout": 10
+	},
+	"tuning": {
+		"p_0": 0.45
+	},
+	"predicates": [
+		{
+			"id": "1",
+			"path": "cases/lodash-1/input",
+			"config": {
+				"errMsg": "customizer is not a function",
+				"topFile": ".internal/equalArrays.js"
+			},
+			"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+		},
+		{
+			"id": "2",
+			"path": "cases/lodash-2/input",
+			"config": {
+				"errMsg": "equalFunc is not a function",
+				"topFile": ".internal/equalArrays.js"
+			},
+			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+		},
+		{
+			"id": "3",
+			"path": "cases/lodash-3/input",
+			"config": {
+				"errMsg": "customizer is not a function",
+				"topFile": ".internal/equalArrays.js"
+			},
+			"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+		},
+		{
+			"id": "4",
+			"path": "cases/lodash-4/input",
+			"config": {
+				"errMsg": "equalFunc is not a function",
+				"topFile": ".internal/equalArrays.js"
+			},
+			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+		},
+		{
+			"id": "5",
+			"path": "cases/lodash-5/input",
+			"config": {
+				"errMsg": "equalFunc is not a function",
+				"topFile": ".internal/equalArrays.js"
+			},
+			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+		},
+		{
+			"id": "6",
+			"path": "cases/lodash-6/input",
+			"config": {
+				"errMsg": "string.charCodeAt is not a function",
+				"topFile": ".internal/stringToPath.js"
+			},
+			"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+		},
+		{
+			"id": "7",
+			"path": "cases/lodash-7/input",
+			"config": {
+				"errMsg": "string.charCodeAt is not a function",
+				"topFile": ".internal/stringToPath.js"
+			},
+			"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+		},
+		{
+			"id": "8",
+			"path": "cases/lodash-8/input",
+			"config": {
+				"errMsg": "iteratee is not a function",
+				"topFile": "transform.js"
+			},
+			"summary": "TypeError: iteratee is not a function in transform.js"
+		},
+		{
+			"id": "9",
+			"path": "cases/lodash-9/input",
+			"config": {
+				"errMsg": "iteratee is not a function",
+				"topFile": "transform.js"
+			},
+			"summary": "TypeError: iteratee is not a function in transform.js"
+		},
+		{
+			"id": "10",
+			"path": "cases/lodash-10/input",
+			"config": {
+				"errMsg": "iteratee is not a function",
+				"topFile": "transform.js"
+			},
+			"summary": "TypeError: iteratee is not a function in transform.js"
+		},
+		{
+			"id": "11",
+			"path": "cases/lodash-11/input",
+			"config": {
+				"errMsg": "iteratee is not a function",
+				"topFile": "transform.js"
+			},
+			"summary": "TypeError: iteratee is not a function in transform.js"
+		}
+	]
+}

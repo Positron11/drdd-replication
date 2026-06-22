@@ -1,71 +1,77 @@
 # Benchmark Suite
 
-Runs all five algorithms against XML, FFmpeg, binutils, and CrashJS predicates and writes a timestamped CSV per run.
+Reproduces the paper's results (Dr. DD, ISSRE 2026). The experiments live in
+`benchmark/scripts/`; each writes a timestamped run directory under
+`benchmark/runs/`. Run them from the repo root with `PYTHONPATH=src`.
 
-## XML
+For ad-hoc, spec-selected runs (a subset of reducers/families/cases) use the
+general `cli/bench` tool instead — see [cli/README.md](../cli/README.md).
 
-Requires Java 11+ and `nc`.
+## Prerequisites
+
+Each family's oracle needs its lib built first (the scripts skip or abort on a
+missing one):
+
+| Family   | Build                          | Also needs    |
+|----------|--------------------------------|---------------|
+| xml      | `make -C predicates/xml`       | Java 11+      |
+| ffmpeg   | `make -C predicates/ffmpeg`    | clang         |
+| binutils | `make -C predicates/binutils`  | flex/bison/m4 |
+| crashjs  | `make -C predicates/crashjs`   | node          |
+
+Case ids come from each family's `manifest.json` (binutils/ffmpeg ids are
+bug/ticket numbers, crashjs `1`..`11`, xml `1.1`..`5.3`).
+
+## Scripts
+
+### `drdd_issre.py` — main reproduction (Table II)
+
+Runs the four reported reducers (`ddmin`, `probdd`, `cdd`, `drdd`) against every
+case of all four families, writing one run dir per family — the headline table.
+To check a reproduction, compare the per-case `minimized_length` and oracle-call
+columns of the generated `result.csv` against the corresponding rows of the
+paper's tables (Table II / `tab:oracles` for size and oracle calls). The
+deterministic reducers (`ddmin`, `cdd`, `drdd`) should match the reported
+`(length, oracle-call)` pairs exactly; ProbDD is stochastic, so its counts vary
+slightly between runs. One binutils case (`21409-2`) is ASLR-sensitive: its
+minimized length matches but its oracle-call count varies by a few. See the
+*Reproduction caveats* in the [root README](../README.md).
 
 ```bash
-python benchmark/scripts/bench_xml.py
+python benchmark/scripts/drdd_issre.py
 ```
 
-Discovers all `ticket-*` cases under `predicates/xml/`, runs every algorithm × every input variant (1–3), and writes results under `benchmark/runs/`.
+### `ablate_drdd.py` — drdd R-ablation study
 
-Seed inputs (`input.pick/1.xml` … `3.xml`) are already checked in. Regenerate them when predicate inputs change:
+Sweeps drdd's restart budget `R` (its `c_iters`) over a subject set and records
+the cost / quality / 1-minimality tradeoff at each budget, plus per-family and
+per-R aggregates. `R = |I|` resolves causal chains to a 1-minimal output; `R = 1`
+is a single linear pass. Edit `R_VALUES` / `SUBJECTS` to expand the study.
 
 ```bash
-make -C predicates/xml clean     # remove all input.pick/ dirs
-make -C predicates/xml           # build all missing variants
+python benchmark/scripts/ablate_drdd.py
 ```
 
-## FFmpeg
+### `verify_competitors.py` — ProbDD/CDD non-1-minimality
+
+Regenerates each competitor's reduced output and drives drdd's single-element
+fixed-point scan over it: any byte it removes is one the competitor left behind,
+quantifying how far ProbDD and CDD stop short of 1-minimality. Edit `ALGORITHMS`
+/ `SUBJECTS` to expand the study.
 
 ```bash
-python benchmark/scripts/bench_ffmpeg.py
-```
-
-Discovers all `ticket-*` cases under `predicates/ffmpeg/` (excluding `x-ticket-*`), runs every algorithm against each case's `input` binary. No server setup required.
-
-Requires `predicates/ffmpeg/lib/ffmpeg_g`. Build it first if missing:
-
-```bash
-make -C predicates/ffmpeg
-```
-
-## Binutils
-
-```bash
-python benchmark/scripts/bench_binutils.py
-```
-
-Discovers all `bug-*` cases under `predicates/binutils/`, runs every algorithm against each case's `input` binary. The oracle runs a pinned binutils tool on the candidate and declares reproduction on either a signal (SEGV) or a configured substring in stderr.
-
-Requires `predicates/binutils/lib/aarch64-linux-readelf-53f7e8ea`. Build it first if missing:
-
-```bash
-make -C predicates/binutils
-```
-
-## CrashJS
-
-```bash
-python benchmark/scripts/bench_crashjs.py
-```
-
-Discovers all `lodash-*` cases under `predicates/crashjs/`, runs every algorithm against each case's `input` test file. The oracle drives a long-lived `node worker.mjs` process and matches reproductions against the configured `(errType, errMsg, topFile)` signature.
-
-Requires `predicates/crashjs/lib/node_modules/` and a system `node` binary. Build first if missing:
-
-```bash
-make -C predicates/crashjs
+python benchmark/scripts/verify_competitors.py
 ```
 
 ## Output
 
-Each run creates a directory under `benchmark/runs/` named `<label>_<DD-MM-YYYY>_<HH:MM>_git-<sha>/` containing:
+Each run creates a directory under `benchmark/runs/`, named
+`<label>_<DD-MM-YYYY>_<HH:MM>_git-<sha>/`. The main reproduction writes:
 
-| File | Contents |
-|------|----------|
-| `result.csv` | Per-task metrics |
-| `logs/<n>_<predicate>_<algo>.log` | Full minimization trace |
+| File                                 | Contents                |
+|--------------------------------------|-------------------------|
+| `result.csv`                         | Per-task metrics        |
+| `logs/<n>_<predicate>_<reducer>.log` | Full minimization trace |
+
+The two studies write a `results.csv` plus per-family and per-R / per-algorithm
+aggregate CSVs in their run dir.

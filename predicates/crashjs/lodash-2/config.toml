@@ -1,5 +1,0 @@
-bug      = "lodash-2"
-errType  = "TypeError"
-errMsg   = "equalFunc is not a function"
-topFile  = ".internal/equalArrays.js"
-timeout  = 10

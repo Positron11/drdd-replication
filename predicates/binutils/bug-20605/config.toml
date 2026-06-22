@@ -1,5 +1,0 @@
-commit  = "2870b1ba"
-binary  = "x86_64-mingw32-objdump"
-argv    = ["-x"]
-signal  = "SIGSEGV"
-timeout = 10

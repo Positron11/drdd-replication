@@ -1,0 +1,168 @@
+{
+	"name": "binutils",
+	"description": "GNU Binutils crashes: objdump/readelf/objcopy/nm run on malformed object files. Each case reproduces a fatal signal (or a specific error diagnostic) from a recorded upstream bug; ids are GNU Binutils Bugzilla numbers.",
+	"common": {
+		"timeout": 10
+	},
+	"tuning": {
+		"p_0": 0.8
+	},
+	"predicates": [
+		{
+			"id": "20605",
+			"path": "cases/bug-20605/input",
+			"config": {
+				"commit": "2870b1ba",
+				"binary": "x86_64-mingw32-objdump",
+				"argv": [
+					"-x"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=20605"
+		},
+		{
+			"id": "21135",
+			"path": "cases/bug-21135/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-zR3"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21135"
+		},
+		{
+			"id": "21136",
+			"path": "cases/bug-21136/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-da"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21136"
+		},
+		{
+			"id": "21138",
+			"path": "cases/bug-21138/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-R6"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21138"
+		},
+		{
+			"id": "21139",
+			"path": "cases/bug-21139/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-w"
+				],
+				"needle": "corrupted top size"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21139"
+		},
+		{
+			"id": "21143",
+			"path": "cases/bug-21143/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-R6"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21143"
+		},
+		{
+			"id": "21144",
+			"path": "cases/bug-21144/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-w"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21144"
+		},
+		{
+			"id": "21145",
+			"path": "cases/bug-21145/input",
+			"config": {
+				"commit": "53f7e8ea",
+				"binary": "aarch64-linux-readelf",
+				"argv": [
+					"-w"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21145"
+		},
+		{
+			"id": "21409-1",
+			"path": "cases/bug-21409-1/input",
+			"config": {
+				"commit": "a6c21d4a",
+				"binary": "x86_64-linux-objdump",
+				"argv": [
+					"-SD"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+		},
+		{
+			"id": "21409-2",
+			"path": "cases/bug-21409-2/input",
+			"config": {
+				"commit": "a6c21d4a",
+				"binary": "x86_64-linux-objdump",
+				"argv": [
+					"-SD"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+		},
+		{
+			"id": "21414",
+			"path": "cases/bug-21414/input",
+			"config": {
+				"commit": "a6c21d4a",
+				"binary": "x86_64-linux-objcopy",
+				"argv": [
+					"-Gs"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21414"
+		},
+		{
+			"id": "30886",
+			"path": "cases/bug-30886/input",
+			"config": {
+				"commit": "be8e8313",
+				"binary": "x86_64-linux-nm",
+				"argv": [
+					"-D"
+				],
+				"signal": "SIGSEGV"
+			},
+			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=30886"
+		}
+	]
+}

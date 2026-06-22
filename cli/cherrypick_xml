@@ -1,0 +1,289 @@
+#!/usr/bin/env python3
+"""Shrink an XML file to a target size range while preserving oracle satisfaction."""
+
+import argparse
+import random
+
+from pathlib import Path
+
+from collections           import deque
+from dataclasses           import dataclass
+from xml.etree.ElementTree import Element
+from defusedxml            import ElementTree as ET
+from _cli                  import cli_guard
+from core.config           import Config
+from core.errors           import ConfigError
+from core.oracle           import Oracle
+from loader                import _load_oracle
+from utils.fmt             import fmt_bytes
+
+
+@dataclass
+class _NodeInfo:
+	node  :Element
+	parent:Element
+	depth :int
+	index :int
+
+
+def _removable_nodes(root:Element) -> list[_NodeInfo]:
+	"""BFS traversal returning all non-root elements with parent info."""
+
+	out  :list[_NodeInfo] = []
+	queue:deque[tuple[Element, Element | None, int]] = deque([(root, None, 0)])
+
+	while queue:
+		node, parent, depth = queue.popleft()
+
+		if parent is not None:
+			out.append(_NodeInfo(
+				node   = node,
+				parent = parent,
+				depth  = depth,
+				index  = list(parent).index(node),
+			))
+
+		for child in node:
+			queue.append((child, node, depth + 1))
+
+	return out
+
+
+def _pick_node(nodes:list[_NodeInfo], rng:random.Random) -> _NodeInfo:
+	"""Pick a node biased toward shallow depths (larger subtrees)."""
+
+	depths = [n.depth for n in nodes]
+	dmin   = min(depths)
+	dmax   = max(depths)
+
+	if dmax <= 1: target = dmin
+	else:
+		cutoff = (dmin + dmax) // 2
+
+		if rng.random() < 0.75: pool = [n for n in nodes if n.depth <= cutoff]
+		else:                   pool = [n for n in nodes if n.depth >  cutoff]
+
+		if not pool: pool = nodes
+
+		# tournament: sample a few, pick largest subtree
+		sample = rng.sample(pool, k=min(8, len(pool)))
+
+		return max(sample, key=lambda n: len(list(n.node.iter())))
+
+	return rng.choice(nodes)
+
+
+def _serialize(root:Element) -> bytes:
+	return ET.tostring(root, encoding="unicode").encode("utf-8")
+
+
+def cherry_pick(
+	root                 :Element,
+	oracle               :Oracle,
+	min_bytes            :int,
+	max_bytes            :int,
+	seed                 :int | None = None,
+	max_attempts         :int        = 100_000,
+	max_consecutive_fails:int        = 50,
+	verbose              :bool       = False) -> bytes:
+
+	"""Randomly remove subtrees while preserving oracle satisfaction and size bounds."""
+
+	rng  = random.Random(seed)
+	size = len(_serialize(root))
+
+	if verbose: print(f"Start: {fmt_bytes(size)} | Target: [{fmt_bytes(min_bytes)}, {fmt_bytes(max_bytes)}]\n")
+
+	if not oracle(list(_serialize(root))):
+		raise ConfigError("Initial input does not satisfy oracle")
+
+	if min_bytes <= size <= max_bytes:
+		if verbose: print("Already within bounds.")
+		return _serialize(root)
+
+	consecutive_fails = 0
+	floor_stagnation  = 0
+	last_accept       = 0
+	nodes             = None
+
+	for attempt in range(1, max_attempts + 1):
+		if nodes is None:
+			nodes = _removable_nodes(root)
+
+		if not nodes:
+			if verbose: print("No removable nodes left.")
+			break
+
+		info = _pick_node(nodes, rng)
+
+		# tentatively remove
+		info.parent.remove(info.node)
+		candidate = _serialize(root)
+		new_size  = len(candidate)
+
+		# reject: below floor
+		if new_size < min_bytes:
+			info.parent.insert(info.index, info.node)
+			floor_stagnation += 1
+
+			if floor_stagnation > 200 and (attempt - last_accept) > 200:
+				if verbose: print("Stagnating at size floor.")
+				break
+
+			continue
+
+		# reject: oracle fails
+		if not oracle(list(candidate)):
+			info.parent.insert(info.index, info.node)
+			consecutive_fails += 1
+
+			if consecutive_fails >= max_consecutive_fails:
+				if verbose: print(f"Stopping: {consecutive_fails} consecutive oracle failures.")
+				break
+
+			continue
+
+		# accept
+		prev_size         = size
+		size              = new_size
+		consecutive_fails = 0
+		floor_stagnation  = 0
+		last_accept       = attempt
+		nodes             = None
+
+		if verbose: print(f"  #{attempt:>6}  {fmt_bytes(size):>10}  (- {fmt_bytes(prev_size - size)})")
+
+		if min_bytes <= size <= max_bytes:
+			if verbose: print("\nReached target bounds.")
+			break
+
+	else:
+		if verbose: print("\nMax attempts reached.")
+
+	return _serialize(root)
+
+
+def _basex_versions(family_dir:Path, case_name:str) -> tuple[str, str]:
+	"""(good, bad) BaseX versions for a case, read off disk rather than the manifest.
+
+	cherrypick generates the inputs the manifest will later point at, so it can't
+	read config from a manifest that doesn't exist yet. The good version is encoded
+	in the case dir name (`case-<good>-<n>`); the bad version is the other
+	`basex-*.jar` staged in the family's lib/.
+	"""
+
+	good     = case_name.removeprefix("case-").rsplit("-", 1)[0]
+	versions = sorted(j.stem.removeprefix("basex-") for j in (family_dir / "lib").glob("basex-*.jar"))
+	bad      = next((v for v in versions if v != good), None)
+
+	if bad is None: raise ConfigError(f"no second basex jar under {family_dir / 'lib'} to use as the bad version")
+
+	return good, bad
+
+
+def main():
+	p = argparse.ArgumentParser(description=__doc__)
+
+	p.add_argument("predicate",
+		type = Path,
+		help = "Path to predicate directory",
+	)
+	p.add_argument("--input",
+		default = "input.xml",
+		help    = "Input file rel. to predicate directory (default: input.xml)",
+	)
+	p.add_argument("--output",
+		default = "input.pick.xml",
+		help    = "Output file rel. to predicate directory (default: input.pick.xml)",
+	)
+	p.add_argument("--min-kb",
+		type    = int,
+		default = 5,
+		help    = "Lower bound target size in KB (default: 5)",
+	)
+	p.add_argument("--max-kb",
+		type    = int,
+		default = 10,
+		help    = "Upper bound target size in KB (default: 10)",
+	)
+	p.add_argument("--seed",
+		type    = int,
+		default = None,
+		help    = "Random seed for reproducibility",
+	)
+	p.add_argument("--max-attempts",
+		type    = int,
+		default = 100_000,
+		help    = "Max node removal attempts (default: 100000)",
+	)
+	p.add_argument("--max-consecutive-fails",
+		type    = int,
+		default = 50,
+		help    = "Stop after N consecutive oracle rejections (default: 50)",
+	)
+	p.add_argument("--verbose",
+		action = "store_true",
+		help   = "Print progress",
+	)
+
+	args = p.parse_args()
+
+	with cli_guard(args.verbose):
+
+		base_path  = args.predicate.resolve()
+		input_path = base_path / args.input
+		query_path = base_path / "query.xq"
+		out_path   = base_path / args.output
+
+		if not input_path.exists(): raise ConfigError(f"Input file not found: {input_path}")
+		if not query_path.exists(): raise ConfigError(f"query.xq not found: {query_path}")
+
+		min_bytes = max(0, args.min_kb * 1024)
+		max_bytes = max(0, args.max_kb * 1024)
+
+		if min_bytes > max_bytes: raise ConfigError("--min-kb must be <= --max-kb")
+
+		# base_path is <predicates>/<family>/cases/<case>
+		family_dir = base_path.parents[1]
+
+		# build the oracle config here (no manifest exists yet at cherrypick time)
+		oracle_cls = _load_oracle(family_dir)
+		good, bad  = _basex_versions(family_dir, base_path.name)
+		config     = Config({"query": query_path, "good_version": good, "bad_version": bad})
+
+		original = input_path.read_text(encoding="utf-8")
+		root     = ET.fromstring(original)
+
+		oracle = oracle_cls(config)
+
+		with oracle:
+			result = cherry_pick(
+				root                  = root,
+				oracle                = oracle,
+				min_bytes             = min_bytes,
+				max_bytes             = max_bytes,
+				seed                  = args.seed,
+				max_attempts          = args.max_attempts,
+				max_consecutive_fails = args.max_consecutive_fails,
+				verbose               = args.verbose,
+			)
+
+		out_path.parent.mkdir(parents=True, exist_ok=True)
+		out_path.write_bytes(result)
+
+		if args.verbose:
+			summary = (
+
+				f"\n - Output : {fmt_bytes(len(result))}"
+				f"\n - Oracle : {oracle.calls} invocations"
+				f"\n - Wrote  : {out_path}"
+
+			)
+
+			print(summary)
+
+		else: print(f"Wrote cherry-picked file to: {out_path}")
+
+
+if __name__ == "__main__":
+	main()

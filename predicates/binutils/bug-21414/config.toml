@@ -1,5 +1,0 @@
-commit  = "a6c21d4a"
-binary  = "x86_64-linux-objcopy"
-argv    = ["-Gs"]
-signal  = "SIGSEGV"
-timeout = 10

@@ -1,6 +1,0 @@
-commit  = "53f7e8ea"
-binary  = "aarch64-linux-readelf"
-argv    = ["-w"]
-needle  = "corrupted top size"
-stream  = "stderr"
-timeout = 10

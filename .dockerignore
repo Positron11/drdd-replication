@@ -1,0 +1,21 @@
+# Build the image from the source tree only. Exclude VCS, local environments,
+# and any host-built artifacts (they are rebuilt cleanly inside the image, and a
+# host build can leave absolute-path symlinks that would not resolve in /artifact).
+#
+# NOTE: predicates/xml/lib is deliberately NOT excluded — the BaseX jars ship
+# in-tree and the xml oracle needs them.
+
+.git
+.venv
+**/__pycache__
+*.egg-info
+benchmark/runs
+
+predicates/binutils/lib
+predicates/binutils/build
+predicates/ffmpeg/lib
+predicates/ffmpeg/build
+predicates/crashjs/lib
+predicates/crashjs/build
+
+**/*.min*

@@ -1,0 +1,158 @@
+{
+	"name": "ffmpeg",
+	"description": "FFmpeg filter crashes: ffmpeg transcodes malformed media through a single filter. Each case reproduces a failure from a recorded FFmpeg bug; ids are FFmpeg Trac ticket numbers.",
+	"common": {
+		"target": ".mp4",
+		"timeout": 30
+	},
+	"tuning": {
+		"p_0": 0.01
+	},
+	"predicates": [
+		{
+			"id": "10686",
+			"path": "cases/ticket-10686/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "afireqsrc"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10686"
+		},
+		{
+			"id": "10688",
+			"path": "cases/ticket-10688/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "bwdif",
+				"target": ".mkv"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10688"
+		},
+		{
+			"id": "10691",
+			"path": "cases/ticket-10691/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "dialoguenhance"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10691"
+		},
+		{
+			"id": "10699",
+			"path": "cases/ticket-10699/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "blurdetect"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10699"
+		},
+		{
+			"id": "10700",
+			"path": "cases/ticket-10700/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "afwtdn"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10700"
+		},
+		{
+			"id": "10701",
+			"path": "cases/ticket-10701/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "colorcorrect"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10701"
+		},
+		{
+			"id": "10702",
+			"path": "cases/ticket-10702/input",
+			"config": {
+				"commit": "466799d4f5",
+				"filter": "transpose,gradfun"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10702"
+		},
+		{
+			"id": "10743",
+			"path": "cases/ticket-10743/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "doubleweave"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10743"
+		},
+		{
+			"id": "10744",
+			"path": "cases/ticket-10744/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "alimiter"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10744"
+		},
+		{
+			"id": "10745",
+			"path": "cases/ticket-10745/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "swaprect"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10745"
+		},
+		{
+			"id": "10746",
+			"path": "cases/ticket-10746/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "stereowiden"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10746"
+		},
+		{
+			"id": "10747",
+			"path": "cases/ticket-10747/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "stereotools"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10747"
+		},
+		{
+			"id": "10749",
+			"path": "cases/ticket-10749/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "showspectrumpic"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10749"
+		},
+		{
+			"id": "10754",
+			"path": "cases/ticket-10754/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "separatefields"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10754"
+		},
+		{
+			"id": "10756",
+			"path": "cases/ticket-10756/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "showwaves"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10756"
+		},
+		{
+			"id": "10758",
+			"path": "cases/ticket-10758/input",
+			"config": {
+				"commit": "8d24a28d06",
+				"filter": "minterpolate"
+			},
+			"url": "https://trac.ffmpeg.org/ticket/10758"
+		}
+	]
+}

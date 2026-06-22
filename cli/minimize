@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Minimize a predicate's input with a DD-family reducer."""
+
+import argparse
+import sys
+
+from pathlib import Path
+
+from _cli              import report, cli_guard
+from loader            import load_dataset
+from reducers          import REDUCERS, PROBABILISTIC
+from runtime.runner    import run_minimization
+from runtime.logging   import StreamView
+
+# the predicate datasets live at the repo root, read as data (never imported)
+_PREDICATES = Path(__file__).resolve().parents[1] / "predicates"
+
+
+def main():
+	p = argparse.ArgumentParser(description="Minimize a predicate's input with a DD-family reducer.")
+
+	p.add_argument("family",
+		help = "predicate family"
+	)
+	p.add_argument("case",
+		help    = "case id (see the family's manifest.json)"
+	)
+	p.add_argument("--reducer",
+		default = "ddmin",
+		choices = REDUCERS,
+		help    = "reducer to use (default: ddmin)"
+	)
+	p.add_argument("--output",
+		help    = "output path (default: input name + '.min')"
+	)
+	p.add_argument("--verbose",
+		action  = "store_true",
+		help    = "print minimizer progress log"
+	)
+
+	args = p.parse_args()
+
+	with cli_guard(args.verbose):
+
+		family = load_dataset(_PREDICATES / args.family)
+		case   = family.case(args.case)
+
+		out_path = Path(args.output) if args.output else case.path.with_stem(f"{case.path.stem}.min")
+
+		# minimizer setup
+		data   = case.path.read_bytes()
+		oracle = family.oracle(case.config)
+		views  = [StreamView(sys.stdout, len(data))] if args.verbose else []
+		kwargs = {"p_0": family.tuning["p_0"]} if (args.reducer in PROBABILISTIC and "p_0" in family.tuning) else {}
+
+		minimized = run_minimization(
+
+			data    = data,
+			reducer = REDUCERS[args.reducer],
+			oracle  = oracle,
+			views   = views,
+
+			**kwargs
+		)
+
+		out_path.write_bytes(minimized)
+
+		report(
+
+			out_path  = out_path,
+			in_bytes  = len(data),
+			out_bytes = len(minimized),
+			n_calls   = oracle.calls,
+			verbose   = args.verbose
+		)
+
+
+if __name__ == "__main__":
+	main()

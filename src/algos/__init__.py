@@ -1,1 +1,0 @@
-ALGORITHMS = ("ddmin", "ddprime", "probdd", "cdd", "pmadd")

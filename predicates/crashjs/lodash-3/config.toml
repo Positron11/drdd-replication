@@ -1,5 +1,0 @@
-bug      = "lodash-3"
-errType  = "TypeError"
-errMsg   = "customizer is not a function"
-topFile  = ".internal/equalArrays.js"
-timeout  = 10

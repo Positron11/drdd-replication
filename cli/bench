@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Run the DD benchmark suite from a JSON spec.
+
+The spec selects what to run:
+
+    { "reducers" : ["ddmin", "probdd"],          # omit -> all reducers
+      "families" : { "binutils": ["21135"],      # omit -> all families
+                     "xml"     : [] } }           # [] -> all cases of that family
+
+With no spec file, runs all reducers x all families x all cases.
+"""
+
+import argparse
+import json
+
+from pathlib       import Path
+from reducers      import REDUCERS
+from bench.harness import run_family_benchmark
+from bench.results import result_dir
+
+_ROOT       = Path(__file__).resolve().parents[1]
+_PREDICATES = _ROOT / "predicates"
+_RUNS       = _ROOT / "benchmark" / "runs"
+
+
+def main():
+	p = argparse.ArgumentParser(description="Run the DD benchmark suite from a JSON spec.")
+	p.add_argument("spec",
+		nargs = "?",
+		type  = Path,
+		help  = "benchmark spec JSON (default: all reducers x all families x all cases)",
+	)
+
+	args = p.parse_args()
+	spec = json.loads(args.spec.read_text()) if args.spec else {}
+
+	reducers = spec.get("reducers") or list(REDUCERS)
+	families = spec.get("families")
+	known    = sorted(p.name for p in _PREDICATES.iterdir() if (p / "manifest.json").is_file())
+
+	if (bad := [r for r in reducers if r not in REDUCERS]):
+		p.error(f"unknown reducer(s): {', '.join(bad)}")
+
+	if families is None:
+		families = {name: [] for name in known}
+
+	if (bad := [f for f in families if f not in known]):
+		p.error(f"unknown family(s): {', '.join(bad)}")
+
+	for name, ids in families.items():
+		run_family_benchmark(_PREDICATES, name, reducers, ids, _RUNS / result_dir(name))
+
+
+if __name__ == "__main__":
+	main()
