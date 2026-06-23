@@ -76,8 +76,11 @@ in [`predicates/README.md`](predicates/README.md).
 ## System requirements
 
 The paper's experiments ran on Fedora Linux (x86_64) on an AMD Ryzen
-workstation with 64 GB RAM. Any modern x86_64 Linux host should reproduce the
-results; the build steps assume a Linux toolchain.
+workstation with 64 GB RAM, pinned to 2 quarantined (isolated, fixed-frequency)
+cores so timing is reproducible and undisturbed by other load. On that setup a
+full benchmark run takes **~11 hours**; use this as a baseline for the expected
+duration. Any modern x86_64 Linux host should reproduce the results; the build
+steps assume a Linux toolchain.
 
 **Core (always required):**
 
@@ -120,8 +123,9 @@ Docker; the commands are identical apart from the binary name.
 podman build -t drdd .                    # or: docker build -t drdd .
 
 # Regenerate the main table (one result.csv per family); mount a host dir so the
-# output survives the container:
-podman run --rm -v "$PWD/runs:/artifact/benchmark/runs" drdd \
+# output survives the container. The :Z suffix relabels the mount for SELinux
+# (required on Fedora/RHEL; harmless on other hosts and ignored by Docker):
+podman run --rm -v "$PWD/runs:/artifact/benchmark/runs:Z" drdd \
     python benchmark/scripts/drdd_issre.py
 
 # Or open a shell and run anything from the sections below interactively:
@@ -226,8 +230,8 @@ A few practical notes, not deviations: `pmadd` is an auxiliary reducer in no
 paper table (the main script skips it); FFmpeg ships all 16 collected cases, of
 which the paper reports 14; and runtimes range from seconds per task (binutils,
 CrashJS) to minutes (FFmpeg, XML — where most candidate inputs are malformed and
-correctly rejected, so a high reject rate is expected). A full run is several
-hours, so spot-check a family via `cli/bench` first.
+correctly rejected, so a high reject rate is expected). A full run is ~11 hours
+on the benchmark setup above, so spot-check a family via `cli/bench` first.
 
 ## Reusability — adding a predicate family or case
 
