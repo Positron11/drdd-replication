@@ -43,6 +43,12 @@ WORKDIR /artifact
 COPY . /artifact
 RUN pip install --no-cache-dir -e .
 
+# Restore the executable bit on the cli/* wrappers. COPY carries whatever the
+# build context had, and some archive tools (e.g. unzip) drop it on extraction —
+# which would make the documented `cli/minimize ...` calls fail with
+# "Permission denied" inside the container.
+RUN chmod +x cli/minimize cli/bench cli/cherrypick_xml
+
 # Build the three oracle libs that are not shipped prebuilt (xml ships its BaseX
 # jars in-tree and needs no build), one layer each so a failure in a later family
 # doesn't re-run the earlier (slow) builds. Each drops its build tree in the SAME
@@ -70,5 +76,6 @@ RUN make -C predicates/crashjs \
 	&& mv predicates/crashjs/lib/instrumented.real predicates/crashjs/lib/instrumented \
 	&& rm -rf predicates/crashjs/build
 
-ENV PYTHONPATH=/artifact/src
+# No PYTHONPATH needed: `pip install -e .` above put the library on the import
+# path, so the same commands work here as in a host venv.
 CMD ["/bin/bash"]

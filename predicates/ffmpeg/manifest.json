@@ -47,15 +47,6 @@
 			"url": "https://trac.ffmpeg.org/ticket/10699"
 		},
 		{
-			"id": "10700",
-			"path": "cases/ticket-10700/input",
-			"config": {
-				"commit": "466799d4f5",
-				"filter": "afwtdn"
-			},
-			"url": "https://trac.ffmpeg.org/ticket/10700"
-		},
-		{
 			"id": "10701",
 			"path": "cases/ticket-10701/input",
 			"config": {
@@ -72,15 +63,6 @@
 				"filter": "transpose,gradfun"
 			},
 			"url": "https://trac.ffmpeg.org/ticket/10702"
-		},
-		{
-			"id": "10743",
-			"path": "cases/ticket-10743/input",
-			"config": {
-				"commit": "8d24a28d06",
-				"filter": "doubleweave"
-			},
-			"url": "https://trac.ffmpeg.org/ticket/10743"
 		},
 		{
 			"id": "10744",

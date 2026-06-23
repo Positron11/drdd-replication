@@ -1,28 +1,23 @@
 # CLI
 
-Command-line tools for minimization, benchmarking, and input preparation. Run from the repo root with `PYTHONPATH=src`.
+Command-line tools for minimization, benchmarking, and input preparation. Run from the repo root with the venv active — after `pip install -e .` the library is on the import path, so no `PYTHONPATH` is needed. If extraction dropped the executable bit, run `chmod +x cli/*` once or invoke via `python cli/<tool>`.
 
 ## `minimize`
 
-Minimizes one predicate input with a DD-family reducer. The case is selected from
-its family's `manifest.json` by id — the input path and oracle config come from the
-manifest, so the script never hard-codes predicate paths.
+Minimizes one predicate input with a DD-family reducer. The case is selected from its family's `manifest.json` by id — the input path and oracle config come from the manifest, so the script never hard-codes predicate paths.
 
 ```
 usage: minimize <family> <case> [--reducer NAME] [--output PATH] [--verbose]
 
   family      one of: binutils, crashjs, ffmpeg, xml
   case        case id (see the family's manifest.json)
-  --reducer   one of: cdd, ddmin, drdd, pmadd, probdd  (default: ddmin)
+  --reducer   one of: cdd, ddmin, drdd, probdd  (default: ddmin)
   --output    output path  (default: input name with a .min suffix)
   --verbose   print per-step progress
 ```
 
 ```bash
 cli/minimize binutils 21135 --reducer ddmin --verbose
-cli/minimize xml 1.1      --reducer drdd
-cli/minimize ffmpeg 10699 --reducer pmadd --verbose
-cli/minimize crashjs 9
 ```
 
 The oracle is the family's; reproduction is declared by the family's `oracle.py`:
@@ -36,7 +31,7 @@ The oracle is the family's; reproduction is declared by the family's `oracle.py`
 
 ## `cherrypick_xml`
 
-Stochastically shrinks an XML file to a target size range while preserving oracle satisfaction. Used by `make -C predicates/xml` to generate `input.pick/` variants; rarely needed directly.
+Stochastically shrinks an XML file to a target size range while preserving oracle satisfaction. It produced the `predicates/xml/.../input.pick/` seed variants that ship in-tree; those are the canonical paper inputs, so this is rarely needed directly. Regeneration is stochastic — pass `--seed` for a reproducible result.
 
 ```
 usage: cherrypick_xml <predicate> [--input FILE] [--output FILE]
@@ -52,16 +47,12 @@ usage: cherrypick_xml <predicate> [--input FILE] [--output FILE]
 ```
 
 ```bash
-cli/cherrypick_xml predicates/xml/cases/case-1e9bc83-1 \
-    --input input.xml --output input.pick/1.xml --min-kb 0 --max-kb 1 --verbose
+cli/cherrypick_xml predicates/xml/cases/case-1e9bc83-1 --input input.xml --output input.pick/1.xml --min-kb 0 --max-kb 1 --verbose
 ```
 
 ## `bench`
 
-Runs the benchmark suite (reducers × families × cases) from an optional JSON spec, writing
-per-task logs and a summary CSV under `benchmark/runs/`. Every spec field is optional; an
-omitted field means "all". To reproduce the paper's full table instead, use
-[benchmark/scripts/drdd_issre.py](../benchmark/scripts/drdd_issre.py).
+Runs the benchmark suite (reducers × families × cases) from an optional JSON spec, writing per-task logs and a summary CSV under `benchmark/runs/`. Every spec field is optional; an omitted field means "all". To reproduce the paper's full table instead, use [benchmark/scripts/drdd_issre.py](../benchmark/scripts/drdd_issre.py).
 
 ```jsonc
 {

@@ -24,11 +24,11 @@ lib/                 — BaseX JARs
 manifest.json        — common config + the input paths to benchmark
 ```
 
-**Regenerate seed variants** (requires Java 11+):
+**Seed variants ship in-tree.** The `input.pick/` variants are tracked in the repository and are the exact inputs the paper used, so no build step is needed. They were produced from each `input.xml` by [`cli/cherrypick_xml`](../cli/README.md) (variant *k* shrunk to ≤ 2*k* KB while preserving the oracle). Regenerating is a provenance exercise only — `cherrypick_xml` removes nodes stochastically, so a fresh run yields *different* inputs and will not match the paper unless you pass a fixed `--seed`. To experiment (requires Java 11+ for the BaseX oracle):
 
 ```bash
-make -C predicates/xml clean     # remove all input.pick/ dirs
-make -C predicates/xml           # all 5 cases × 3 variants
+python cli/cherrypick_xml predicates/xml/cases/case-1e9bc83-1 \
+    --input input.xml --output input.pick/1.xml --min-kb 0 --max-kb 2 --seed 0 --verbose
 ```
 
 ## FFmpeg
@@ -41,10 +41,8 @@ ASAN-detected bugs across two FFmpeg commits. Each predicate fires when the inst
 | ticket-[10688](https://trac.ffmpeg.org/ticket/10688)/ | `bwdif` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10691](https://trac.ffmpeg.org/ticket/10691)/ | `dialoguenhance` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10699](https://trac.ffmpeg.org/ticket/10699)/ | `blurdetect` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
-| ticket-[10700](https://trac.ffmpeg.org/ticket/10700)/ | `afwtdn` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10701](https://trac.ffmpeg.org/ticket/10701)/ | `colorcorrect` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
 | ticket-[10702](https://trac.ffmpeg.org/ticket/10702)/ | `transpose,gradfun` | [`466799d`](https://github.com/FFmpeg/FFmpeg/commit/466799d4f5) |
-| ticket-[10743](https://trac.ffmpeg.org/ticket/10743)/ | `doubleweave` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10744](https://trac.ffmpeg.org/ticket/10744)/ | `alimiter` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10745](https://trac.ffmpeg.org/ticket/10745)/ | `swaprect` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |
 | ticket-[10746](https://trac.ffmpeg.org/ticket/10746)/ | `stereowiden` | [`8d24a28`](https://github.com/FFmpeg/FFmpeg/commit/8d24a28d06) |

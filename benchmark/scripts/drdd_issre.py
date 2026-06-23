@@ -3,7 +3,7 @@
 
 Runs the four reported reducers against every case of all four predicate families
 and writes one timestamped run dir per family under benchmark/runs/ — the same
-harness and output format that produced the paper's numbers. This is the headline
+harness and output format that produced the paper's numbers. This is the main
 Table II reproduction; the two supplementary studies live alongside it in
 ablate_drdd.py (drdd's R-ablation) and verify_competitors.py (ProbDD/CDD
 non-1-minimality).
@@ -15,13 +15,12 @@ Reducers, in table order:
     cdd     CDD competitor                        (deterministic; consumes p_0 from the manifest)
     drdd    Dr. DD, this paper                     (deterministic)
 
-pmadd is intentionally excluded — it is not a reported result. The deterministic
-reducers reproduce the archived runs to the exact (length, oracle-call) pair;
-ProbDD lands close but not identical, as it is stochastic by nature.
+The deterministic reducers reproduce the archived runs to the exact
+(length, oracle-call) pair; ProbDD lands close but not identical, as it is
+stochastic by nature.
 
 Prerequisites — each family's oracle lib must be built (see benchmark/README.md):
 
-    make -C predicates/xml        # + Java 11+
     make -C predicates/ffmpeg     # clang
     make -C predicates/binutils   # flex/bison/m4
     make -C predicates/crashjs    # + node
@@ -41,7 +40,7 @@ _PREDICATES = _ROOT / "predicates"
 _RUNS       = _ROOT / "benchmark" / "runs"
 
 
-# the four reducers the paper reports, in table order (pmadd is not a paper result)
+# the four reducers the paper reports, in table order
 PAPER_REDUCERS = ["ddmin", "probdd", "cdd", "drdd"]
 
 # every family; [] selects all cases of each from its manifest.json

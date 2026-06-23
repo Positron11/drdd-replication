@@ -133,7 +133,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 	write_csv(_aggregate(rows, ("family", "algorithm")), run_dir / "by_family.csv")
 	write_csv(_aggregate(rows, ("algorithm",)),          run_dir / "by_algorithm.csv")
 
-	# terminal summary: the headline non-1-minimality signal per algorithm
+	# terminal summary: the non-1-minimality signal per algorithm
 	print(f"\nper-algorithm summary (all families):\n")
 	print(f"  {'algo':>8}  {'mean_start':>11}  {'mean_reduced':>13}  {'mean_short':>11}  {'1-min frac':>11}")
 

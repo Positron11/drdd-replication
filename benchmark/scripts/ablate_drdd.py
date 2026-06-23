@@ -148,7 +148,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 	write_csv(_aggregate(rows, ("family", "R")), run_dir / "by_family.csv")
 	write_csv(_aggregate(rows, ("R",)),          run_dir / "by_R.csv")
 
-	# terminal summary: the headline cost/minimality curve across R
+	# terminal summary: the cost/minimality curve across R
 	print(f"\nper-R summary (all families):\n")
 	print(f"  {'R':>4}  {'mean_calls':>11}  {'mean_out_B':>11}  {'mean_short':>11}  {'1-min frac':>11}")
 
