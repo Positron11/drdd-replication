@@ -44,7 +44,7 @@ class BinutilsOracle(Oracle[int]):
 
 		self._tmp_dir  = TempDir(dir=_SHM, prefix="dd_")
 		self._tmp_path = Path(self._tmp_dir.name) / "input"
-		self._cmd      = [str(self._binary), *self._argv, str(self._tmp_path)]
+		self._cmd      = ["setarch", "-R", str(self._binary), *self._argv, str(self._tmp_path)]
 
 		return self
 

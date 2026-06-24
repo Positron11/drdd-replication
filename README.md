@@ -58,13 +58,17 @@ podman build -t drdd .
 # family); mount a host dir so the output survives 
 # the container. The :Z suffix relabels the mount 
 # for SELinux (required on Fedora/RHEL; harmless 
-# on other hosts and ignored by Docker):
-podman run --rm -v "$PWD/runs:/artifact/benchmark/runs:Z" drdd python benchmark/scripts/drdd_issre.py
+# on other hosts and ignored by Docker). The seccomp 
+# flag is required for the binutils family (see note 
+# below).
+podman run --rm --security-opt seccomp=unconfined -v "$PWD/runs:/artifact/benchmark/runs:Z" drdd python benchmark/scripts/drdd_issre.py
 
 # Or open a shell and run anything from the sections 
 # below interactively (no setup required):
-podman run --rm -it drdd
+podman run --rm --security-opt seccomp=unconfined -it drdd
 ```
+
+> **Binutils / seccomp note.** The binutils oracle runs each target under `setarch -R` to disable ASLR, so the one layout-sensitive case (`21409-2`) is deterministic. That relies on the `personality(ADDR_NO_RANDOMIZE)` syscall, which the default container seccomp profile blocks — hence `--security-opt seccomp=unconfined` on the `run` commands above. Without it, `setarch` aborts before the tool executes and the binutils family cannot reproduce. (On a host, no flag is needed.)
 
 > **AddressSanitizer note.** The FFmpeg oracle is an ASan build. On some recent kernels ASan cannot map its shadow memory under high-entropy ASLR; if the FFmpeg family aborts at startup with an ASan mmap/shadow-memory message, lower the host setting once with `sudo sysctl -w vm.mmap_rnd_bits=28` and re-run (the container shares the host kernel, so this is set on the host, not in the image).
 
@@ -158,7 +162,7 @@ The results reproduce deterministically, with two narrow and well-understood exc
 
 - **`probdd` is stochastic by design, but pinned for replication.** ProbDD is a probabilistic algorithm; we fix its RNG seed to `0` (the default in [`src/reducers/probdd.py`](src/reducers/probdd.py)), so every run is reproducible and re-running yields identical oracle-call counts rather than shifting figures. Its numbers should match the reported ones on the same platform; they are only guaranteed stable *across* hosts insofar as the NumPy RNG and floating-point results agree. Removing the seed restores the run-to-run variation inherent to the algorithm.
 
-- **One binutils case (`21409-2`) has ASLR-dependent call counts.** With ASLR on (as in the original runs), a borderline `objdump` access faults in some memory layouts but not others, nudging this single case's call count by a few; its minimized **length is identical** every run.
+- **One binutils case (`21409-2`) is address-space-layout sensitive.** A borderline `objdump` access faults under some memory layouts but not others, so under ASLR this case is not exactly reproducible. The binutils oracle runs the target under `setarch -R` (ASLR disabled) to pin the layout, making the case deterministic and reproducible run-to-run; its figures therefore differ by a small amount (a few oracle calls, and a few bytes of output for the non-1-minimal competitors) from the ASLR-on sample originally reported.
 
 **Runtime.** Per-task time ranges from seconds (binutils, CrashJS) to minutes (FFmpeg, XML — where most candidate inputs are malformed and correctly rejected, so a high reject rate is expected). The paper's full run took **~11 hours** on the reference setup (Fedora Linux x86_64, AMD Ryzen, 64 GB RAM, 2 pinned cores); spot-check a family via `cli/bench` first.
 

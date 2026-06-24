@@ -4,13 +4,17 @@
 # tables can be regenerated in a fixed environment, offline. The file is a
 # standard Dockerfile and builds with either Podman or Docker.
 #
-#   podman build -t drdd .                                       # or: docker build -t drdd .
-#   podman run --rm -it drdd                                     # shell in the artifact
-#   podman run --rm drdd python benchmark/scripts/drdd_issre.py  # regenerate the main table
+#   podman build -t drdd .                                                                         # or: docker build -t drdd .
+#   podman run --rm --security-opt seccomp=unconfined -it drdd                                     # shell in the artifact
+#   podman run --rm --security-opt seccomp=unconfined drdd python benchmark/scripts/drdd_issre.py  # regenerate the main table
 #
 # The build clones binutils-gdb and FFmpeg and compiles an AddressSanitizer
 # FFmpeg from source, so it needs network access and roughly 10-30 minutes the
 # first time; the resulting image is a few GB.
+#
+# --security-opt seccomp=unconfined is required: the binutils oracle uses
+# `setarch -R` (personality(ADDR_NO_RANDOMIZE)), which the default seccomp
+# profile blocks. Without it the binutils family cannot reproduce.
 
 FROM ubuntu:24.04
 
