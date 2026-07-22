@@ -15,7 +15,7 @@ authors = [
 	{ name = "Anonymous Authors" },
 ]
 dependencies = [
-	"defusedxml >= 0.7.1",    # cherrypick_xml (safe XML parsing)
+	"defusedxml >= 0.7.1",    # xml/cherrypick (safe XML parsing)
 	"saxonche   >= 12.9.0",   # xml driver (reference XQuery engine)
 	"numpy      >= 1.24",     # probdd reducer (probability vectors)
 ]
