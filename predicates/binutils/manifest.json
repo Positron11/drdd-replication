@@ -1,5 +1,7 @@
 {
 	"name": "binutils",
+	"oracle": "oracle.py:BinutilsOracle",
+	"build": "make",
 	"description": "GNU Binutils crashes: objdump/readelf/objcopy/nm run on malformed object files. Each case reproduces a fatal signal (or a specific error diagnostic) from a recorded upstream bug; ids are GNU Binutils Bugzilla numbers.",
 	"common": {
 		"timeout": 10
@@ -19,7 +21,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=20605"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=20605"
+			}
 		},
 		{
 			"id": "21135",
@@ -32,7 +36,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21135"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21135"
+			}
 		},
 		{
 			"id": "21136",
@@ -45,7 +51,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21136"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21136"
+			}
 		},
 		{
 			"id": "21138",
@@ -58,7 +66,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21138"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21138"
+			}
 		},
 		{
 			"id": "21139",
@@ -71,7 +81,9 @@
 				],
 				"needle": "corrupted top size"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21139"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21139"
+			}
 		},
 		{
 			"id": "21143",
@@ -84,7 +96,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21143"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21143"
+			}
 		},
 		{
 			"id": "21144",
@@ -97,7 +111,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21144"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21144"
+			}
 		},
 		{
 			"id": "21145",
@@ -110,7 +126,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21145"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21145"
+			}
 		},
 		{
 			"id": "21409-1",
@@ -123,7 +141,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+			}
 		},
 		{
 			"id": "21409-2",
@@ -136,7 +156,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21409"
+			}
 		},
 		{
 			"id": "21414",
@@ -149,7 +171,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21414"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=21414"
+			}
 		},
 		{
 			"id": "30886",
@@ -162,7 +186,9 @@
 				],
 				"signal": "SIGSEGV"
 			},
-			"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=30886"
+			"meta": {
+				"url": "https://sourceware.org/bugzilla/show_bug.cgi?id=30886"
+			}
 		}
 	]
 }

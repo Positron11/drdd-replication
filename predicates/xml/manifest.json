@@ -1,5 +1,6 @@
 {
 	"name": "xml",
+	"oracle": "oracle.py:BaseXOracle",
 	"description": "XQuery differential bugs (Zhang et al., \"Toward a Better Understanding of Probabilistic Delta Debugging\"): a query on which a buggy BaseX version diverges from the Saxon reference while a fixed BaseX version agrees.",
 	"source": "https://zenodo.org/records/14854239",
 	"common": {

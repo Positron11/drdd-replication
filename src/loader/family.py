@@ -6,17 +6,23 @@ from core.config import Config
 from core.errors import ConfigError
 
 
-# what a plugin's oracle.py hands back
-OracleFactory = Callable[..., Oracle]
+# a family's Oracle class, as consumers use it: called with a case's resolved
+# Config, it yields the predicate instance for that case
+OracleFactory = Callable[[Config], Oracle]
 
 
 @dataclass(frozen=True)
 class Case:
-	"""One predicate instance: an input file and the config to run it under."""
+	"""One predicate instance: an input file and the config to run it under.
+
+	`meta` is human-facing provenance the loader carries but never reads - a bug
+	url, a crash summary - kept apart from `config`, which the oracle does read.
+	"""
 
 	id    :str
 	path  :Path
 	config:Config
+	meta  :dict
 
 
 @dataclass(frozen=True)
@@ -25,6 +31,7 @@ class Family:
 
 	name  :str
 	oracle:OracleFactory
+	build :str | None
 	cases :dict[str, Case]
 	tuning:dict
 

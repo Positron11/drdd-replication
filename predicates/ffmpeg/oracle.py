@@ -21,7 +21,7 @@ class FFmpegOracle(Oracle[int]):
 		self._ffmpeg = require(
 
 			path = _LIB / f"ffmpeg_g-{config['commit']}",
-			hint = "make -C predicates/ffmpeg",
+			build = config.get("build"),
 
 		)
 

@@ -1,5 +1,7 @@
 {
 	"name": "crashjs",
+	"oracle": "oracle.py:CrashJSOracle",
+	"build": "make",
 	"description": "Node.js lodash crashes: lodash exercised on adversarial inputs. Each case reproduces a recorded TypeError thrown from a specific lodash module.",
 	"source": "https://zenodo.org/records/10530515",
 	"common": {
@@ -17,7 +19,9 @@
 				"errMsg": "customizer is not a function",
 				"topFile": ".internal/equalArrays.js"
 			},
-			"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+			"meta": {
+				"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+			}
 		},
 		{
 			"id": "2",
@@ -26,7 +30,9 @@
 				"errMsg": "equalFunc is not a function",
 				"topFile": ".internal/equalArrays.js"
 			},
-			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			"meta": {
+				"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			}
 		},
 		{
 			"id": "3",
@@ -35,7 +41,9 @@
 				"errMsg": "customizer is not a function",
 				"topFile": ".internal/equalArrays.js"
 			},
-			"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+			"meta": {
+				"summary": "TypeError: customizer is not a function in .internal/equalArrays.js"
+			}
 		},
 		{
 			"id": "4",
@@ -44,7 +52,9 @@
 				"errMsg": "equalFunc is not a function",
 				"topFile": ".internal/equalArrays.js"
 			},
-			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			"meta": {
+				"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			}
 		},
 		{
 			"id": "5",
@@ -53,7 +63,9 @@
 				"errMsg": "equalFunc is not a function",
 				"topFile": ".internal/equalArrays.js"
 			},
-			"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			"meta": {
+				"summary": "TypeError: equalFunc is not a function in .internal/equalArrays.js"
+			}
 		},
 		{
 			"id": "6",
@@ -62,7 +74,9 @@
 				"errMsg": "string.charCodeAt is not a function",
 				"topFile": ".internal/stringToPath.js"
 			},
-			"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+			"meta": {
+				"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+			}
 		},
 		{
 			"id": "7",
@@ -71,7 +85,9 @@
 				"errMsg": "string.charCodeAt is not a function",
 				"topFile": ".internal/stringToPath.js"
 			},
-			"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+			"meta": {
+				"summary": "TypeError: string.charCodeAt is not a function in .internal/stringToPath.js"
+			}
 		},
 		{
 			"id": "8",
@@ -80,7 +96,9 @@
 				"errMsg": "iteratee is not a function",
 				"topFile": "transform.js"
 			},
-			"summary": "TypeError: iteratee is not a function in transform.js"
+			"meta": {
+				"summary": "TypeError: iteratee is not a function in transform.js"
+			}
 		},
 		{
 			"id": "9",
@@ -89,7 +107,9 @@
 				"errMsg": "iteratee is not a function",
 				"topFile": "transform.js"
 			},
-			"summary": "TypeError: iteratee is not a function in transform.js"
+			"meta": {
+				"summary": "TypeError: iteratee is not a function in transform.js"
+			}
 		},
 		{
 			"id": "10",
@@ -98,7 +118,9 @@
 				"errMsg": "iteratee is not a function",
 				"topFile": "transform.js"
 			},
-			"summary": "TypeError: iteratee is not a function in transform.js"
+			"meta": {
+				"summary": "TypeError: iteratee is not a function in transform.js"
+			}
 		},
 		{
 			"id": "11",
@@ -107,7 +129,9 @@
 				"errMsg": "iteratee is not a function",
 				"topFile": "transform.js"
 			},
-			"summary": "TypeError: iteratee is not a function in transform.js"
+			"meta": {
+				"summary": "TypeError: iteratee is not a function in transform.js"
+			}
 		}
 	]
 }

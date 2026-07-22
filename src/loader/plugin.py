@@ -3,110 +3,187 @@ import json
 import sys
 
 from pathlib       import Path
+from types         import ModuleType
+from typing        import cast
 from core.oracle   import Oracle
 from core.config   import Config
 from core.errors   import ConfigError
 from loader.family import Family, Case, OracleFactory
 
 
-_ORACLE   = "oracle.py"
 _MANIFEST = "manifest.json"
 
 
-# loaded plugins, keyed by oracle.py path (a plugin is imported at most once)
-_loaded:dict[Path, OracleFactory] = {}
+# imported plugin modules, keyed by source path - a plugin is executed at most once
+_modules:dict[Path, ModuleType] = {}
 
 
-def _load_cases(dataset_dir:Path, data:dict) -> dict[str, Case]:
-	"""Build the Cases from a parsed manifest, keyed by id.
+def _build_command(family_dir:Path, data:dict) -> str | None:
+	"""The family's build command, runnable from the caller's working directory.
 
-	Each predicate gives its input `path`, relative to the dataset. Its config is
-	the manifest `common` overlaid with the case's own. A predicate may declare
-	auxiliary `files` its oracle needs, each a dataset-relative path resolved
-	here and exposed in config under its own name.
+	A manifest declares only *what* to run, since where to run it is its own
+	directory - which it cannot name without hardcoding where it happens to sit.
+	The location is supplied here, so a family loaded from anywhere reports a
+	command that works.
 	"""
 
+	build = data.get("build")
+
+	if build is None: return None
+
+	try:               where = family_dir.relative_to(Path.cwd())
+	except ValueError: where = family_dir
+
+	return f"cd {where} && {build}"
+
+
+def _read_manifest(family_dir:Path) -> Config:
+	"""Parse a family's manifest."""
+
+	path = family_dir / _MANIFEST
+
+	if not path.is_file(): raise ConfigError(f"no {_MANIFEST} found at {family_dir}")
+
+	try:                              data = json.loads(path.read_text())
+	except json.JSONDecodeError as e: raise ConfigError(f"{path}: invalid JSON ({e})") from e
+
+	if not isinstance(data, dict):
+		raise ConfigError(f"{path}: expected a top-level JSON object")
+
+	return Config(data, where=str(path))
+
+
+def _load_cases(family_dir:Path, data:Config, build:str | None) -> dict[str, Case]:
+	"""Build the Cases from a parsed manifest, keyed by id.
+
+	A predicate entry is `id`, `path` (its input, relative to the family), and
+	the functional and human halves of the rest:
+
+	    config  the oracle's settings - manifest `common` overlaid with the
+	            case's own, plus the family `build` so an oracle can name it when
+	            an artifact is absent
+	    files   auxiliary family-relative paths the oracle needs, resolved here
+	            into config under their own names
+	    meta    provenance the loader carries but never reads (a url, a summary)
+	"""
+
+	where  = family_dir / _MANIFEST
 	common = data.get("common", {})
 	result = {}
 
-	for p in data["predicates"]:
+	for i, entry in enumerate(data["predicates"]):
 
-		# concatenate common and individual config
-		config = Config({**common, **p.get("config", {})})
+		at = f"{where}: predicate {i}"
 
-		# resolve any auxiliary files the predicate declares
-		for name, rel in p.get("files", {}).items(): config[name] = dataset_dir / rel
+		if not isinstance(entry, dict): raise ConfigError(f"{at}: expected an object")
 
-		result[p["id"]] = Case(p["id"], dataset_dir / p["path"], config)
+		p  = Config(entry, where=at)
+		id = p["id"]
+
+		# ids key the family, so a duplicate would silently drop a case
+		if id in result: raise ConfigError(f"{at}: duplicate case id {id!r}")
+
+		# concatenate common and individual config, tagged with the case it is for
+		config = Config({**common, **p.get("config", {})}, where=f"{at} ({id!r})")
+
+		# the family's build reaches every case
+		if build is not None: config["build"] = build
+
+		# resolve any auxiliary files the case declares
+		for name, rel in p.get("files", {}).items():
+
+			# a collision would silently shadow a config value with a path
+			if name in config: raise ConfigError(f"{at}: {name!r} is both a config key and a file")
+
+			config[name] = family_dir / rel
+
+		result[id] = Case(id, family_dir / p["path"], config, p.get("meta", {}))
 
 	return result
 
 
-def _load_oracle(dataset_dir:Path) -> OracleFactory:
-	"""Import a dataset's oracle.py as a plugin and return its Oracle subclass.
+def _import_plugin(source:Path, family_dir:Path) -> ModuleType:
+	"""Import `source` as a throwaway package rooted at its family directory.
 
-	The directory is loaded as a throwaway package (so the oracle's own
-	`from .helper import ...` relative imports resolve against its own files).
+	The package is what makes an oracle's own `from .basex import ...` resolve
+	against its family's files.
 	"""
 
-	source = (dataset_dir / _ORACLE).resolve()
+	if source in _modules: return _modules[source]
 
-	if not source.is_file(): raise ConfigError(f"no {_ORACLE} in {dataset_dir}")
-	if source in _loaded:    return _loaded[source]
-
-	# load oracle.py as a one-off package so relative imports resolve
-	pkg = f"dd_predicate_{dataset_dir.name}"
-	
-	# make the dir a package
+	pkg  = f"dd_predicate_{family_dir.name}"
 	spec = importlib.util.spec_from_file_location(
 
-		name                       = pkg, 
+		name                       = pkg,
 		location                   = source,
-		submodule_search_locations = [str(dataset_dir)],
+		submodule_search_locations = [str(family_dir)],
 
 	)
 
-	# always set: source is a verified file
-	assert spec and spec.loader
+	if not (spec and spec.loader): raise ConfigError(f"{source} is not importable")
 
 	# register before exec so relative imports resolve
 	module           = importlib.util.module_from_spec(spec)
 	sys.modules[pkg] = module
-	
-	spec.loader.exec_module(module)
 
-	# plugin contract: a single Oracle subclass defined in this file
-	oracles = [
-		
-		obj for obj in vars(module).values()
+	try: spec.loader.exec_module(module)
 
-		if isinstance(obj, type) 
-		and issubclass(obj, Oracle) 
-		and obj.__module__ == pkg
-	
-	]
+	except Exception as e:
+		# don't leave a half-initialized module registered
+		sys.modules.pop(pkg, None)
 
-	if len(oracles) != 1: raise ConfigError(f"{source} must define exactly one Oracle (found {len(oracles)})")
+		raise ConfigError(f"{source}: import failed ({type(e).__name__}: {e})") from e
 
-	_loaded[source] = oracles[0]
+	_modules[source] = module
 
-	return oracles[0]
+	return module
 
 
-def load_family(dataset_dir:Path) -> Family:
-	"""Resolve a dataset directory into a Family."""
+def _load_oracle(family_dir:Path, ref:str) -> OracleFactory:
+	"""Resolve the Oracle class a manifest names.
 
-	manifest = dataset_dir / _MANIFEST
+	`ref` is `<module>:<class>`, the module relative to the family directory:
 
-	if not manifest.is_file(): raise ConfigError(f"no dataset at {dataset_dir}")
+	    "oracle": "oracle.py:CrashJSOracle"
 
-	data = json.loads(manifest.read_text())
+	Nothing is guessed from the layout - the class is named and looked up, rather
+	than the module being imported and searched for whatever happens to subclass
+	Oracle. A family may then keep as many classes as it likes.
+	"""
+
+	where          = family_dir / _MANIFEST
+	rel, sep, name = ref.partition(":")
+
+	if not (sep and rel and name):
+		raise ConfigError(f"{where}: oracle must be '<module>:<class>', got {ref!r}")
+
+	source = (family_dir / rel).resolve()
+
+	if not source.is_file(): raise ConfigError(f"{where}: no {rel} in {family_dir}")
+
+	obj = getattr(_import_plugin(source, family_dir), name, None)
+
+	if obj is None:
+		raise ConfigError(f"{where}: {source} defines no {name!r}")
+
+	if not (isinstance(obj, type) and issubclass(obj, Oracle)):
+		raise ConfigError(f"{where}: {name!r} in {source} is not an Oracle subclass")
+
+	return cast(OracleFactory, obj)
+
+
+def load_family(family_dir:Path) -> Family:
+	"""Resolve a predicate family's directory into a Family."""
+
+	data  = _read_manifest(family_dir)
+	build = _build_command(family_dir, data)
 
 	return Family(
-		
-		name   = data["name"], 
-		oracle = _load_oracle(dataset_dir), 
-		cases  = _load_cases(dataset_dir, data), 
-		tuning = data.get("tuning", {})
-		
+
+		name   = data["name"],
+		oracle = _load_oracle(family_dir, data["oracle"]),
+		build  = build,
+		cases  = _load_cases(family_dir, data, build),
+		tuning = data.get("tuning", {}),
+
 	)

@@ -18,7 +18,7 @@ class CrashJSOracle(Oracle[int]):
 		require(
 
 			path = lib / "worker.mjs",
-			hint = "make -C predicates/crashjs",
+			build = config.get("build"),
 
 		)
 

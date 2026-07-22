@@ -14,7 +14,7 @@ from _cli                  import cli_guard
 from core.config           import Config
 from core.errors           import ConfigError
 from core.oracle           import Oracle
-from loader                import _load_oracle
+from loader                import load_family
 from utils.fmt             import fmt_bytes
 
 
@@ -246,10 +246,12 @@ def main():
 		# base_path is <predicates>/<family>/cases/<case>
 		family_dir = base_path.parents[1]
 
-		# build the oracle config here (no manifest exists yet at cherrypick time)
-		oracle_cls = _load_oracle(family_dir)
+		# the variant this run produces has no manifest entry yet, so its config
+		# is built here - but the Oracle class still comes from the manifest, so
+		# this tool and the benchmark cannot drift onto different predicates
+		oracle_cls = load_family(family_dir).oracle
 		good, bad  = _basex_versions(family_dir, base_path.name)
-		config     = Config({"query": query_path, "good_version": good, "bad_version": bad})
+		config     = Config({"query": query_path, "good_version": good, "bad_version": bad}, where=f"cherrypick {base_path.name}")
 
 		original = input_path.read_text(encoding="utf-8")
 		root     = ET.fromstring(original)

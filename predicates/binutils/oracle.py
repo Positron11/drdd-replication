@@ -26,7 +26,7 @@ class BinutilsOracle(Oracle[int]):
 		self._binary = require(
 
 			path = _LIB / f"{config['binary']}-{config['commit']}",
-			hint = "make -C predicates/binutils",
+			build = config.get("build"),
 
 		)
 		
