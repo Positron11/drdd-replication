@@ -32,7 +32,7 @@ import time
 from pathlib import Path
 
 from core.errors    import DDError
-from reducers       import REDUCERS
+from reducers       import REDUCERS, tuning_for
 from reducers.drdd  import causal_chain_scan
 from loader         import load_family, Family, Case
 from runtime.runner import run_minimization
@@ -74,7 +74,7 @@ def _generate(family:Family, case:Case, data:bytes, algo:str) -> tuple[bytes, in
 	"""Reproduce a competitor's reduced output; return (output, oracle_calls)."""
 
 	oracle = family.oracle(case.config)
-	kwargs = {"p_0": family.tuning["p_0"]} if "p_0" in family.tuning else {}
+	kwargs = tuning_for(algo, family.tuning)
 	out    = run_minimization(data, REDUCERS[algo], oracle, **kwargs)
 
 	return out, oracle.calls

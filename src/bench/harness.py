@@ -9,7 +9,7 @@ from dataclasses    import dataclass
 from typing         import Callable
 from core.oracle    import Oracle
 from core.errors    import DDError, ConfigError
-from reducers       import REDUCERS, PROBABILISTIC
+from reducers       import REDUCERS, tuning_for
 from loader         import load_family, Family, Case
 from runtime.runner import run_minimization
 from bench.results  import RunResult, write_csv
@@ -215,7 +215,7 @@ def _build_tasks(
 				reducer    = reducer,
 				reducer_fn = REDUCERS[reducer],
 				oracle     = oracle,
-				kwargs     = {"p_0": family.tuning["p_0"]} if (reducer in PROBABILISTIC and "p_0" in family.tuning) else {},
+				kwargs     = tuning_for(reducer, family.tuning),
 
 			))
 

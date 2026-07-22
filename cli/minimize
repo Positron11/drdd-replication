@@ -8,7 +8,7 @@ from pathlib import Path
 
 from _cli              import report, cli_guard
 from loader            import load_family
-from reducers          import REDUCERS, PROBABILISTIC
+from reducers          import REDUCERS, tuning_for
 from runtime.runner    import run_minimization
 from runtime.logging   import StreamView
 
@@ -51,7 +51,7 @@ def main():
 		data   = case.path.read_bytes()
 		oracle = family.oracle(case.config)
 		views  = [StreamView(sys.stdout, len(data))] if args.verbose else []
-		kwargs = {"p_0": family.tuning["p_0"]} if (args.reducer in PROBABILISTIC and "p_0" in family.tuning) else {}
+		kwargs = tuning_for(args.reducer, family.tuning)
 
 		minimized = run_minimization(
 
