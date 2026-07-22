@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from _cli              import report, cli_guard
-from loader            import load_dataset
+from loader            import load_family
 from reducers          import REDUCERS, PROBABILISTIC
 from runtime.runner    import run_minimization
 from runtime.logging   import StreamView
@@ -42,7 +42,7 @@ def main():
 
 	with cli_guard(args.verbose):
 
-		family = load_dataset(_PREDICATES / args.family)
+		family = load_family(_PREDICATES / args.family)
 		case   = family.case(args.case)
 
 		out_path = Path(args.output) if args.output else case.path.with_stem(f"{case.path.stem}.min")

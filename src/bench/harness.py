@@ -10,7 +10,7 @@ from typing         import Callable
 from core.oracle    import Oracle
 from core.errors    import DDError, ConfigError
 from reducers       import REDUCERS, PROBABILISTIC
-from loader         import load_dataset, Family, Case
+from loader         import load_family, Family, Case
 from runtime.runner import run_minimization
 from bench.results  import RunResult, write_csv
 from bench.logging  import TerminalView, FileView
@@ -231,7 +231,7 @@ def run_family_benchmark(
 
 	"""Run `reducers` x selected cases from a dataset's manifest.json."""
 
-	family   = load_dataset(predicates_root / name)
+	family   = load_family(predicates_root / name)
 	selected = set(ids) if ids else family.cases.keys()
 
 	# materialize each selected case (case() surfaces an unknown id or a missing input)

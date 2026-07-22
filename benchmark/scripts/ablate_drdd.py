@@ -30,7 +30,7 @@ from pathlib        import Path
 from core.errors    import DDError
 from reducers       import REDUCERS
 from reducers.drdd  import _causal_chain_scan
-from loader         import load_dataset, Family, Case
+from loader         import load_family, Family, Case
 from runtime.runner import run_minimization
 from bench.results  import result_dir, write_csv
 
@@ -225,7 +225,7 @@ def main() -> None:
 def _entry(fam:str, cid:str) -> tuple[Family, Case]:
 	"""Resolve one case to its (family, case), or abort."""
 
-	family = load_dataset(_PREDICATES / fam)
+	family = load_family(_PREDICATES / fam)
 
 	try: case = family.case(cid)
 	except DDError as e: sys.exit(f"  {e}")

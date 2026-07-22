@@ -93,7 +93,7 @@ def _load_oracle(dataset_dir:Path) -> OracleFactory:
 	return oracles[0]
 
 
-def load_dataset(dataset_dir:Path) -> Family:
+def load_family(dataset_dir:Path) -> Family:
 	"""Resolve a dataset directory into a Family."""
 
 	manifest = dataset_dir / _MANIFEST
