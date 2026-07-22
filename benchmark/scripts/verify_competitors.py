@@ -4,7 +4,7 @@
 The paper claims ProbDD and CDD stop short of 1-minimality, unlike drdd. This
 tests it directly: for each subject, regenerate the competitor's reduced output
 and then run the single-element fixed-point reducer — the same verifier used by
-the R-ablation (drdd's `_causal_chain_scan`) — against the subject's own oracle.
+the R-ablation (`causal_chain_scan`) — against the subject's own oracle.
 Any element it removes is one the competitor left behind, so the output was not
 1-minimal; the bytes removed quantify the shortfall.
 
@@ -33,7 +33,7 @@ from pathlib import Path
 
 from core.errors    import DDError
 from reducers       import REDUCERS
-from reducers.drdd  import _causal_chain_scan
+from reducers.drdd  import causal_chain_scan
 from loader         import load_family, Family, Case
 from runtime.runner import run_minimization
 from bench.results  import result_dir, write_csv
@@ -89,7 +89,7 @@ def _verify_minimal(family:Family, case:Case, output:bytes) -> tuple[int, int]:
 	oracle = family.oracle(case.config)
 
 	with oracle:
-		minimal = _causal_chain_scan(list(output), len(output), oracle)
+		minimal = causal_chain_scan(output, oracle)
 
 	return len(minimal), oracle.calls
 
