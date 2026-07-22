@@ -12,8 +12,9 @@ Hardware and software needed to run this artifact. Installation steps are in
 | Memory | 8 GB is comfortable; the reference runs used 64 GB |
 | Network | Required at build time only — each family's `Makefile` fetches upstream sources. The container image, once built, runs offline. |
 
-The paper's reference figures were measured on Fedora Linux x86_64, AMD Ryzen,
-64 GB RAM, with 2 pinned cores. A full four-family reproduction takes **~11 hours**
+The paper's reference figures were measured on Fedora Linux 43 (kernel 6.19,
+x86_64), an AMD Ryzen AI 9 HX PRO 370 workstation with 64 GB of RAM, driven by
+Python 3.14, with each task run sequentially on a single core. A full four-family reproduction takes **~11 hours**
 on that setup.
 
 ## Software

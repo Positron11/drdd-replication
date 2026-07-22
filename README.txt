@@ -33,9 +33,10 @@ upstream sources by each family's Makefile, or baked into the container image.
 
 Reproducible (and therefore also Available and Reviewed).
 
-Available    The artifact is archived at <DOI -- Zenodo record> under the MIT
-             License (see LICENSE). It is self-contained: all source, all
-             predicate inputs, and all build recipes are included.
+Available    The artifact is archived at
+             https://doi.org/10.5281/zenodo.21498483 under the MIT License
+             (see LICENSE). It is self-contained: all source, all predicate
+             inputs, and all build recipes are included.
 
 Reviewed     Every component documented here is runnable as documented.
              Section 7 gives a functionality check that needs no compilation
@@ -196,8 +197,10 @@ Nothing is all-or-nothing: build only the families you intend to run. A family
 whose oracle is missing is reported and skipped, and the rest still run. XML
 needs no build at all -- its BaseX jars ship in-tree.
 
-Reference platform for the reported figures: Fedora Linux x86_64, AMD Ryzen,
-64 GB RAM, 2 pinned cores.
+Reference platform for the figures reported in the paper: Fedora Linux 43
+(kernel 6.19, x86_64) on an AMD Ryzen AI 9 HX PRO 370 workstation with 64 GB of
+RAM, driven by Python 3.14 in a standard virtual environment, with each task
+run sequentially on a single core.
 
 Known environment caveat: the FFmpeg oracle is an AddressSanitizer build. On
 some recent kernels ASan cannot map its shadow memory under high-entropy
@@ -211,21 +214,22 @@ setting, not an image one.
 7. GETTING STARTED
 --------------------------------------------------------------------------------
 
-Total time: about two minutes, of which roughly 30 seconds is computation.
-No compilation, no downloads beyond the Python dependencies, no toolchain.
+Total time: under two minutes -- about 10 seconds to install, about 70 seconds
+to run. No compilation, no toolchain, no downloads beyond the three Python
+dependencies.
 
 The XML family is used here precisely because it needs no build step: its
 BaseX jars and inputs ship in the artifact, so it exercises the entire
 pipeline -- manifest loading, oracle construction, reduction, and the runner's
 check that the result still reproduces -- with only a JRE.
 
-  Step 1: install (about one minute)
+  Step 1: install
 
       python3 -m venv .venv
       source .venv/bin/activate
       pip install -e .
 
-  Step 2: confirm the artifact works (about 30 seconds)
+  Step 2: confirm the artifact works (about 70 seconds)
 
       cli/bench benchmark/specs/getting-started.json
 
@@ -233,21 +237,26 @@ check that the result still reproduces -- with only a JRE.
   tasks report "Completed 2 task(s) (0 failed)", and its result.csv contains:
 
       predicate  reducer  minimized_length  oracle_invocations
-      1.1        ddmin    190               8030
-      1.1        drdd     200               789
+      1.1        ddmin    396               32567
+      1.1        drdd     401               1618
 
-  From a 728-byte input, both reducers reach a 1-minimal result -- verified,
-  not assumed: driving the single-element fixed-point scan over either output
-  against a fresh oracle removes nothing further. drdd gets there in 789
-  oracle calls against ddmin's 8,030, about 10% of the cost.
+  These are not illustrative numbers. They are row T-1e9bc83-1-1 of the
+  paper's Table II, reproduced exactly -- both the reduced size and the oracle
+  count, for both reducers. So the functionality check is also, on one
+  subject, a reproduction check: if these four numbers match, the artifact is
+  running the same algorithms over the same input as the paper.
 
-  Note that drdd's output is slightly *larger* here (200 B vs 190 B). That is
-  expected and is not a defect: 1-minimality is a local property, so two
-  distinct local minima need not be the same size, and neither dominates the
-  other. The paper's claim is about the cost of reaching 1-minimality, not
-  about producing the globally smallest output -- which delta debugging does
-  not promise. Across the full subject set the two land at comparable sizes;
-  on CrashJS case 9, for instance, drdd's 217 B is smaller than ddmin's 226 B.
+  It is also the paper's claim in miniature. From a 1,391-byte input drdd
+  reaches a 1-minimal result in 1,618 oracle calls where ddmin needs 32,567 --
+  4.97% of the cost, the figure Table III reports for this row.
+
+  Note that drdd's output is slightly *larger* here (401 b vs 396 b), as the
+  paper's own table shows. That is expected and is not a defect: 1-minimality
+  is a local property, so two distinct local minima need not be the same size,
+  and neither dominates the other. The paper claims a cost advantage at equal
+  reduction quality, not the globally smallest output -- which delta debugging
+  does not promise. On CrashJS case 9, the ordering reverses: drdd's 217 b is
+  smaller than ddmin's 226 b.
 
 If instead you are using the container, the equivalent is:
 
