@@ -6,14 +6,36 @@ import sys
 
 from pathlib import Path
 
-from _cli              import report, cli_guard
 from loader            import load_family
 from reducers          import REDUCERS, tuning_for
 from runtime.runner    import run_minimization
 from runtime.logging   import StreamView
+from utils.cli         import cli_guard
+from utils.fmt         import fmt_bytes, fit
 
-# the predicate datasets live at the repo root, read as data (never imported)
+# the predicate families live at the repo root, read as data (never imported)
 _PREDICATES = Path(__file__).resolve().parents[1] / "predicates"
+
+
+def _report(
+		out_path :Path,
+		in_bytes :int,
+		out_bytes:int,
+		n_calls  :int,
+		verbose  :bool) -> None:
+
+	"""Print the minimization result summary."""
+
+	if verbose:
+		print(
+
+			f"\n - Minimized: {fmt_bytes(in_bytes)} -> {fmt_bytes(out_bytes)}"
+			f"\n - Oracle:    {n_calls} calls"
+			f"\n - Output:    {fit(str(out_path), width=50, front=True)}"
+
+		)
+
+	else: print(f"Wrote minimized file to: {out_path}")
 
 
 def main():
@@ -65,7 +87,7 @@ def main():
 
 		out_path.write_bytes(minimized)
 
-		report(
+		_report(
 
 			out_path  = out_path,
 			in_bytes  = len(data),
