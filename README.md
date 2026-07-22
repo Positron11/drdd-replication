@@ -6,6 +6,8 @@ The artifact is structure-agnostic: every reducer treats its input as an opaque 
 
 This README is the entry point. It walks from a container or host-native setup through a quick smoke test to the full reproduction, mapping each paper table to the command that regenerates it. Family-specific build and provenance details live in the sub-READMEs linked throughout.
 
+**In a hurry?** [`REQUIREMENTS.md`](REQUIREMENTS.md) lists what you need, [`INSTALL.md`](INSTALL.md) gets it running, [`STATUS.md`](STATUS.md) states the badges claimed.
+
 ## Overview
 
 ### Reducers
