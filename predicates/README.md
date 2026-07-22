@@ -1,12 +1,60 @@
 # Predicates
 
-Four families of real-world bug reproducers. Each predicate is a directory holding the input file(s) needed to reproduce the bug; its run config lives in the family's `manifest.json`.
+Four families of real-world bug reproducers: [XML](#xml) (15 cases), [FFmpeg](#ffmpeg) (14), [Binutils](#binutils) (12) and [CrashJS](#crashjs) (11). Each predicate is a directory holding the input file(s) needed to reproduce the bug; its run config lives in the family's `manifest.json`.
 
 ## Family layout
 
-Each family is a self-contained plugin: `predicates/<name>/` holds an `oracle.py` that defines a single `Oracle` subclass (its predicate, built and validated from a resolved config), a `manifest.json` (a `common` config block plus an array of predicates, each carrying an `id`, an input path relative to the family directory like `cases/<case>/...`, and its config), any support modules it needs (e.g. `xml/basex.py`, `crashjs/session.py`), and a `cases/` directory holding the per-case data (just input files — config lives in the manifest). The library auto-discovers any directory containing both an `oracle.py` and a `manifest.json`, loads the oracle as a plugin (so its own `from .basex import ...` relative imports resolve), and the benchmark runs exactly the inputs its `manifest.json` lists (an input not listed is skipped) — adding a family or case needs no changes under `src/`.
+Each family is a self-contained plugin under `predicates/<name>/`:
 
-Each predicate's `id` is how the CLIs select a case (`minimize <family> <id>`, or a benchmark spec's case lists). Ids are the bug/ticket numbers for binutils and ffmpeg, `1`..`11` for crashjs, and `<case>.<variant>` (`1.1`..`5.3`) for the xml size variants.
+| File | Role |
+|------|------|
+| `manifest.json` | The source of truth — see the contract below. |
+| `oracle.py` | Defines the `Oracle` subclass the manifest names: the predicate, built and validated from a resolved config. The filename and class are the manifest's to choose. |
+| `cases/` | Per-case data — input files only; configuration lives in the manifest. |
+| support modules | Anything the oracle imports, e.g. `xml/basex.py`, `crashjs/session.py`. |
+
+The library auto-discovers any directory holding a `manifest.json` and does what the manifest says: it imports the module the `oracle` field names, takes the class it names, and runs exactly the inputs the `predicates` array lists — an input not listed is skipped. The oracle is imported as a plugin rooted at its family, so its own relative imports (`from .basex import ...`) resolve against its own files. **Adding a family or a case needs no change under [`src/`](../src/).**
+
+### The manifest contract
+
+```jsonc
+{
+  "name"  : "crashjs",                    // what the family is called (never inferred from the directory)
+  "oracle": "oracle.py:CrashJSOracle",    // <module>:<class>, module relative to the family
+  "build" : "make",                       // omit when the artifacts ship in-tree, as xml's jars do
+  "common": { "timeout": 10 },            // config merged into every case
+  "tuning": { "p_0": 0.45 },              // properties of this family's inputs (see below)
+  "predicates": [
+    {
+      "id"    : "9",                             // how the CLIs select this case
+      "path"  : "cases/lodash-9/input",          // its input, relative to the family
+      "config": { "errType": "TypeError" },      // the oracle's settings; overlays `common`
+      "files" : { "query": "cases/x/query.xq" }, // aux paths, resolved and exposed under their own names
+      "meta"  : { "url": "https://..." }         // provenance the loader carries but never reads
+    }
+  ]
+}
+```
+
+Every path is relative to the family, `build` included: it says only *what* to run, since where to run it is the family's own directory — which a manifest cannot name without hardcoding where it happens to sit. The loader supplies the location, so a family loaded from anywhere reports a command that works. The resolved command reaches every case's config, and an oracle names it when an artifact is missing: `require(path, build=config.get("build"))`.
+
+Nothing is guessed from the layout. The oracle class is named and looked up, rather than the loader importing the module and searching it for whatever happens to subclass `Oracle`, so a family may keep as many classes as it likes.
+
+**The directory and the manifest answer different questions.** The directory is where a family lives and how one is selected — `minimize <family> <case>` resolves a path under `predicates/`. The manifest says what the family is *called*: `name` is read from it, never inferred, so a family's identity travels with its data.
+
+A manifest is hand-edited, so every way one can be malformed — invalid JSON, a missing `name`/`id`/`path`, a duplicate case id, an unresolvable `oracle` ref, a `files` key colliding with a config key — is reported as a `ConfigError` naming the file and the offending entry, rather than crashing or silently dropping a case.
+
+**Case ids.** Each predicate's `id` is how the CLIs select a case (`minimize <family> <id>`, or a benchmark spec's case lists). Ids are the bug/ticket numbers for binutils and ffmpeg, `1`–`11` for crashjs, and `<case>.<variant>` (`1.1`–`5.3`) for the xml size variants.
+
+**Tuning.** The optional `tuning` block names properties of the family's *inputs* — not of any reducer:
+
+```jsonc
+"tuning": { "p_0": 0.45 }
+```
+
+`p_0` is roughly how removable the inputs are: binutils `0.8`, crashjs `0.45`, xml `0.25`, ffmpeg `0.01`. Each reducer receives a property only if its signature has a parameter for it, so `probdd` and `cdd` read `p_0` and the rest ignore it. The manifest names no reducer, so the pool stays ignorant of the roster; the mapping lives in [`tuning_for`](../src/reducers/__init__.py). A reducer's own knobs — `drdd`'s `c_iters` (the ablation axis), `probdd`'s `seed` (the reproducibility anchor) — are not input properties and stay out of manifests.
+
+**The oracle contract.** [`core.Oracle`](../src/core/oracle.py) counts every call — *oracle calls* is the benchmark's universal cost metric. A family implements `_call`; a stateful one also overrides `__enter__`/`__exit__` to hold servers or subprocesses open across a run.
 
 ## XML
 
@@ -24,12 +72,31 @@ lib/                 — BaseX JARs
 manifest.json        — common config + the input paths to benchmark
 ```
 
-**Seed variants ship in-tree.** The `input.pick/` variants are tracked in the repository and are the exact inputs the paper used, so no build step is needed. They were produced from each `input.xml` by [`cli/cherrypick_xml`](../cli/README.md) (variant *k* shrunk to ≤ 2*k* KB while preserving the oracle). Regenerating is a provenance exercise only — `cherrypick_xml` removes nodes stochastically, so a fresh run yields *different* inputs and will not match the paper unless you pass a fixed `--seed`. To experiment (requires Java 11+ for the BaseX oracle):
+**Seed variants ship in-tree.** The `input.pick/` variants are tracked in the repository and are the exact inputs the paper used, so no build step is needed. They were produced from each `input.xml` by [`xml/cherrypick`](xml/cherrypick) (variant *k* shrunk to ≤ 2*k* KB while preserving the oracle). Regenerating is a provenance exercise only — `cherrypick` removes nodes stochastically, so a fresh run yields *different* inputs and will not match the paper unless you pass a fixed `--seed`. To experiment (requires Java 11+ for the BaseX oracle):
 
 ```bash
-python cli/cherrypick_xml predicates/xml/cases/case-1e9bc83-1 \
+predicates/xml/cherrypick predicates/xml/cases/case-1e9bc83-1 \
     --input input.xml --output input.pick/1.xml --min-kb 0 --max-kb 2 --seed 0 --verbose
 ```
+
+```
+usage: cherrypick <case-dir> [--input FILE] [--output FILE]
+                  [--min-kb N] [--max-kb N] [--seed N]
+                  [--max-attempts N] [--max-consecutive-fails N] [--verbose]
+
+  case-dir                a case directory under cases/ (needs query.xq and an input);
+                          the BaseX versions come from the case directory name and lib/,
+                          and the Oracle class from this family's manifest.json
+  --input                 input file, relative to the case dir     (default: input.xml)
+  --output                output file, relative to the case dir
+  --min-kb                lower bound on output size in KB         (default: 5)
+  --max-kb                upper bound on output size in KB         (default: 10)
+  --seed                  random seed for reproducibility
+  --max-attempts          max node removal attempts                (default: 100000)
+  --max-consecutive-fails stop after N consecutive oracle rejections (default: 50)
+```
+
+It lives here rather than in [`cli/`](../cli/) because it is this family's: it cannot run against any other. `minimize` and `bench` are family-agnostic; this is not.
 
 ## FFmpeg
 
@@ -150,3 +217,4 @@ echo "$PWD/../cases/lodash-9/input" | node worker.mjs
 ```
 
 The mocha-free [worker](crashjs/worker.mjs) reads test paths from stdin one per line, uses ESM cache-busting (`?t=<counter>`) to pick up in-place mutations, and emits one JSON result line per request. Lodash modules stay cached across calls — only the test file is reloaded.
+

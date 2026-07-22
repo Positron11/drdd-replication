@@ -21,7 +21,9 @@ Case ids come from each family's `manifest.json` (binutils/ffmpeg ids are bug/ti
 
 ### `drdd_issre.py` — main reproduction (Table II)
 
-Runs the four reported reducers (`ddmin`, `probdd`, `cdd`, `drdd`) against every case of all four families, writing one run dir per family — the main table. To check a reproduction, compare the per-case `minimized_length` and oracle-call columns of the generated `result.csv` against the corresponding rows of the paper's tables (Table II / `tab:oracles` for size and oracle calls). The deterministic reducers (`ddmin`, `cdd`, `drdd`) should match the reported `(length, oracle-call)` pairs exactly; ProbDD is stochastic, so its counts vary slightly between runs. One binutils case (`21409-2`) is ASLR-sensitive: its minimized length matches but its oracle-call count varies by a few. See the *Reproduction caveats* in the [root README](../README.md).
+Runs the four reported reducers (`ddmin`, `probdd`, `cdd`, `drdd`) against every case of all four families, writing one run dir per family — the main table. To check a reproduction, compare the per-case `minimized_length` and oracle-call columns of the generated `result.csv` against the corresponding rows of the paper's tables (Table II / `tab:oracles` for size and oracle calls). The deterministic reducers (`ddmin`, `cdd`, `drdd`) should match the reported `(length, oracle-call)` pairs exactly.
+
+Two documented exceptions, both detailed under *Reproduction caveats* in the [root README](../README.md): ProbDD's RNG seed is fixed at `0`, so it re-runs identically on a given host but is only stable *across* hosts insofar as the NumPy RNG and floating-point results agree; and one binutils case (`21409-2`) is ASLR-sensitive, so its oracle-call count moves by a few between runs, and with it a few bytes of output for the non-1-minimal competitors.
 
 ```bash
 python benchmark/scripts/drdd_issre.py
@@ -37,7 +39,7 @@ python benchmark/scripts/ablate_drdd.py
 
 ### `verify_competitors.py` — ProbDD/CDD non-1-minimality
 
-Regenerates each competitor's reduced output and drives drdd's single-element fixed-point scan over it: any byte it removes is one the competitor left behind, quantifying how far ProbDD and CDD stop short of 1-minimality. Edit `ALGORITHMS` / `SUBJECTS` to expand the study.
+Regenerates each competitor's reduced output and drives the single-element fixed-point scan ([`causal_chain_scan`](../src/reducers/drdd.py), the same verifier the ablation uses) over it: any byte it removes is one the competitor left behind, quantifying how far ProbDD and CDD stop short of 1-minimality. Edit `ALGORITHMS` / `SUBJECTS` to expand the study.
 
 ```bash
 python benchmark/scripts/verify_competitors.py
@@ -53,3 +55,7 @@ Each run creates a directory under `benchmark/runs/`, named `<label>_<DD-MM-YYYY
 | `logs/<n>_<predicate>_<reducer>.log` | Full minimization trace |
 
 The two studies write a `results.csv` plus per-family and per-R / per-algorithm aggregate CSVs in their run dir.
+
+`result.csv` records `input_sha256` per task alongside the metrics, so a run always carries proof of which input produced it — the one check that catches a subject having drifted from the one a reported figure was measured on.
+
+Shared helpers for the experiment scripts live in [`scripts/_common.py`](scripts/_common.py): case lookup, the run-output root, and `verify_minimal`, the single definition of the 1-minimality check both studies use.

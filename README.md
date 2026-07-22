@@ -39,9 +39,9 @@ All predicate inputs are shipped in-tree. The oracle binaries/libraries are *not
 | Path | Description |
 |------|-------------|
 | [`src/`](src/) | The installable, family-agnostic library: reducers, the oracle/family contracts, the predicate plugin loader, the minimization runner, loggers, and the benchmark harness. |
-| [`cli/`](cli/) | Command-line entry points: `minimize` (one case, any reducer), `bench` (spec-selected subset run), `cherrypick_xml` (XML seed-variant generator). See [`cli/README.md`](cli/README.md). |
+| [`cli/`](cli/) | Command-line entry points: `minimize` (one case, any reducer) and `bench` (spec-selected subset run). Both are family-agnostic; family-specific tooling lives in the family. See [`cli/README.md`](cli/README.md). |
 | [`benchmark/`](benchmark/) | The three experiment scripts that regenerate the paper's tables, and the `runs/` output directory. See [`benchmark/README.md`](benchmark/README.md). |
-| [`predicates/`](predicates/) | The four predicate families. Each ships an `oracle.py`, a `manifest.json` (cases + config), a `cases/` directory of inputs, and a `Makefile` that builds the oracle lib. See [`predicates/README.md`](predicates/README.md). |
+| [`predicates/`](predicates/) | The predicate families. Each ships a `manifest.json` (the contract: cases, config, and the oracle class it names), an `oracle.py`, a `cases/` directory of inputs, and a `Makefile` if it needs a built oracle. See [`predicates/README.md`](predicates/README.md). |
 
 ## Reproducing in a container (recommended)
 
@@ -104,20 +104,20 @@ Each family builds its oracle from upstream source; build only the ones you inte
 
 > **Binutils gotcha.** Without `flex`/`bison`/`m4` the build fails with `Error 127`. If a build is interrupted, a stale `config.cache` can cause a later `"YACC has changed since the previous run"` error — recover with `rm -rf predicates/binutils/build/build-*` and rebuild.
 
-## Smoke check 
+## Smoke check
 
-Start with the cheapest family to confirm the toolchain works end to end. CrashJS and binutils are the fastest — seconds to about a minute per `(case × reducer)`.
+Start with the cheapest family to confirm the toolchain works end to end. CrashJS is the fastest — seconds to about a minute per `(case × reducer)`.
 
 ```bash
 # 1. Build one fast oracle lib
 make -C predicates/crashjs
 
-# 2. Minimize a single case with the paper's method
-cli/minimize crashjs 9 --reducer drdd  --verbose
-cli/minimize crashjs 9 --reducer ddmin --verbose
+# 2. Minimize a single case with the paper's method, then with the baseline
+cli/minimize crashjs 9 --reducer drdd  --verbose   # 217 B,    982 calls
+cli/minimize crashjs 9 --reducer ddmin --verbose   # 226 B,  8,493 calls
 ```
 
-`drdd` should reach the same minimized length as `ddmin` while reporting far fewer oracle calls — the paper's core claim, visible on a single case.
+From a 444 B input, `drdd` reaches a 1-minimal output for **~12% of the oracle calls** `ddmin` needs — the paper's core claim, visible on a single case. Both outputs are 1-minimal; note that 1-minimality is a *local* property, so distinct local minima need not be the same size, which is why the two lengths differ slightly.
 
 ## Reproducing the paper's results
 
@@ -164,11 +164,11 @@ The results reproduce deterministically, with two narrow and well-understood exc
 
 ## Reusability
 
-The library auto-discovers any directory under `predicates/` that contains both an `oracle.py` (one `Oracle` subclass) and a `manifest.json` (cases + config), so **new families and cases plug in without any change under `src/`**:
+The library auto-discovers any directory under `predicates/` holding a `manifest.json`, and does what that manifest says — it names the family, the `Oracle` class implementing its predicate, the command that builds whatever the oracle needs, and the cases. So **new families and cases plug in without any change under `src/`**:
 
 - **A new case** in an existing family: add its input under `cases/<id>/` and an entry in that family's `manifest.json`. It is then selectable as `cli/minimize <family> <id>` and included in benchmark runs.
 
-- **A new family**: create `predicates/<name>/` with an `oracle.py`, `manifest.json`, `cases/`, and (if it needs a built oracle) a `Makefile`.
+- **A new family**: create `predicates/<name>/` with a `manifest.json`, the `oracle.py` it names, `cases/`, and (if it needs a built oracle) a `Makefile`.
 
 See [`predicates/README.md`](predicates/README.md) for the family/manifest contract and [`cli/README.md`](cli/README.md) for how cases are selected.
 
@@ -179,8 +179,8 @@ This package is structured against the [ACM Artifact Review and Badging policy (
 | Badge | How this package supports it |
 |-------|------------------------------|
 | **Artifacts Available** | The complete package is archived with a DOI (see *Data Availability* in the paper) and self-contained: all source, predicate inputs, and build recipes are included. |
-| **Artifacts Evaluated — Functional / Reusable** | Every component documented here is runnable as described. The reducers are a small, family-agnostic library; new predicate families and cases plug in without touching `src/` (see *Reusability*). |
-| **Results Reproduced** | [`benchmark/scripts/drdd_issre.py`](benchmark/scripts/drdd_issre.py) regenerates the per-case minimized length and oracle-call counts of the paper's main table; the two supplementary scripts regenerate the ablation and verification tables. See *Reproducing the paper's results* and *Reproduction caveats*. |
+| **Artifacts Evaluated — Functional / Reusable** | Every component documented here is runnable as described. The reducers are a small, family-agnostic library; new predicate families and cases plug in without touching `src/` (see *Reusability*). A malformed `manifest.json` is diagnosed with a `ConfigError` naming the file and the offending entry, rather than crashing or silently dropping a case. |
+| **Results Reproduced** | [`benchmark/scripts/drdd_issre.py`](benchmark/scripts/drdd_issre.py) regenerates the per-case minimized length and oracle-call counts of the paper's main table; the two supplementary scripts regenerate the ablation and verification tables. Each `result.csv` records the `input_sha256` of every subject, so a reproduction attempt carries proof it ran on the shipped inputs. See *Reproducing the paper's results* and *Reproduction caveats*. |
 
 ## Data provenance
 

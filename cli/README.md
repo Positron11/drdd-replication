@@ -1,6 +1,6 @@
 # CLI
 
-Command-line tools for minimization, benchmarking, and input preparation. Run from the repo root with the venv active — after `pip install -e .` the library is on the import path, so no `PYTHONPATH` is needed. If extraction dropped the executable bit, run `chmod +x cli/*` once or invoke via `python cli/<tool>`.
+Command-line tools for minimization and benchmarking. Both are family-agnostic — they take a family name and work for any of them. Tooling specific to one family lives with that family: the XML seed-variant generator is [`predicates/xml/cherrypick`](../predicates/xml/cherrypick). Run from the repo root with the venv active — after `pip install -e .` the library is on the import path, so no `PYTHONPATH` is needed. If extraction dropped the executable bit, run `chmod +x cli/*` once or invoke via `python cli/<tool>`.
 
 ## `minimize`
 
@@ -29,26 +29,8 @@ The oracle is the family's; reproduction is declared by the family's `oracle.py`
 | `binutils` | pinned binutils tool dies on the configured `signal` (e.g. SIGSEGV) or emits the `needle` substring |
 | `crashjs`  | long-lived `node worker.mjs` reports the configured `(errType, errMsg, topFile)` triple |
 
-## `cherrypick_xml`
+A family's `tuning` block declares properties of its *inputs* — `p_0`, roughly how removable they are. Each reducer receives a property only if its signature has a parameter for it, so `probdd` and `cdd` get `p_0` and `ddmin`/`drdd` ignore it; see `tuning_for` in [`src/reducers/__init__.py`](../src/reducers/__init__.py). A reducer's own knobs — `drdd`'s `c_iters`, `probdd`'s `seed` — are not input properties and stay out of manifests.
 
-Stochastically shrinks an XML file to a target size range while preserving oracle satisfaction. It produced the `predicates/xml/.../input.pick/` seed variants that ship in-tree; those are the canonical paper inputs, so this is rarely needed directly. Regeneration is stochastic — pass `--seed` for a reproducible result.
-
-```
-usage: cherrypick_xml <predicate> [--input FILE] [--output FILE]
-                      [--min-kb N] [--max-kb N] [--seed N]
-                      [--max-attempts N] [--max-consecutive-fails N] [--verbose]
-
-  predicate               path to a case directory (needs query.xq + input; runs before any manifest exists, so the BaseX versions are read from the case dir name and lib/)
-  --min-kb                lower bound on output size in KB           (default: 5)
-  --max-kb                upper bound on output size in KB           (default: 10)
-  --seed                  random seed for reproducibility
-  --max-attempts          max node removal attempts                  (default: 100000)
-  --max-consecutive-fails stop after N consecutive oracle rejections (default: 50)
-```
-
-```bash
-cli/cherrypick_xml predicates/xml/cases/case-1e9bc83-1 --input input.xml --output input.pick/1.xml --min-kb 0 --max-kb 1 --verbose
-```
 
 ## `bench`
 
@@ -56,7 +38,7 @@ Runs the benchmark suite (reducers × families × cases) from an optional JSON s
 
 ```jsonc
 {
-  "reducers": ["ddmin", "probdd"],     // omit -> all five reducers
+  "reducers": ["ddmin", "probdd"],     // omit -> all four reducers
   "families": {
     "binutils": ["21135", "21139"],    // selected case ids
     "xml": []                          // [] -> all cases of this family
