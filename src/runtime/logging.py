@@ -1,12 +1,12 @@
 from math           import inf
 from datetime       import datetime
 from typing         import TextIO
-from core.logging   import RateLog
+from core.logging   import ProgressLog
 from core.telemetry import Reading
 from utils.fmt      import fmt_bytes, progress_bar, FILLER, DIVIDER
 
 
-class StreamView(RateLog):
+class StreamView(ProgressLog):
 	"""Renders a minimization progress stream to a text stream (file or stdout), rate-limited."""
 
 	def __init__(self,

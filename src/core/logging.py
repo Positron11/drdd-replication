@@ -37,8 +37,14 @@ class Log:
 	def flush(self) -> None: ...
 
 
-class RateLog(Log):
-	"""Logger with time-based rate-limiting."""
+class ProgressLog(Log):
+	"""Logger that renders every update but commits at most one per interval.
+
+	Nothing is dropped: each event is rendered as a transient line, so a watcher
+	always sees the latest. `interval` paces which of them are committed - kept
+	as permanent lines - and `_force` commits one out of band, for whatever
+	transition a subclass finds worth marking.
+	"""
 
 	def __init__(self, stream:TextIO=sys.stdout, interval:float=inf) -> None:
 		super().__init__(stream)
