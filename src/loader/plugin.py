@@ -53,6 +53,25 @@ def _read_manifest(family_dir:Path) -> Config:
 	return Config(data, where=str(path))
 
 
+def _within(family_dir:Path, rel:str, at:str) -> Path:
+	"""Resolve a family-relative path, and refuse one that leaves the family.
+
+	Every path a manifest declares belongs to its own family - that is what
+	makes a family self-contained and relocatable. A `..` that climbs out is a
+	typo, and an expensive one: the escaped path usually still exists, so the
+	case would run happily against the wrong file and report a plausible number.
+	"""
+
+	if Path(rel).is_absolute(): raise ConfigError(f"{at}: {rel!r} must be relative to the family")
+
+	resolved = (family_dir / rel).resolve()
+
+	if not resolved.is_relative_to(family_dir.resolve()):
+		raise ConfigError(f"{at}: {rel!r} escapes the family directory")
+
+	return family_dir / rel
+
+
 def _load_cases(family_dir:Path, data:Config, build:str | None) -> dict[str, Case]:
 	"""Build the Cases from a parsed manifest, keyed by id.
 
@@ -95,9 +114,9 @@ def _load_cases(family_dir:Path, data:Config, build:str | None) -> dict[str, Cas
 			# a collision would silently shadow a config value with a path
 			if name in config: raise ConfigError(f"{at}: {name!r} is both a config key and a file")
 
-			config[name] = family_dir / rel
+			config[name] = _within(family_dir, rel, f"{at}: files.{name}")
 
-		result[id] = Case(id, family_dir / p["path"], config, p.get("meta", {}))
+		result[id] = Case(id, _within(family_dir, p["path"], f"{at}: path"), config, p.get("meta", {}))
 
 	return result
 
