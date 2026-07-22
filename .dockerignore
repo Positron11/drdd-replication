@@ -19,3 +19,4 @@ predicates/crashjs/lib
 predicates/crashjs/build
 
 **/*.min*
+dist

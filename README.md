@@ -44,6 +44,7 @@ All predicate inputs are shipped in-tree. The oracle binaries/libraries are *not
 | [`cli/`](cli/) | Command-line entry points: `minimize` (one case, any reducer) and `bench` (spec-selected subset run). Both are family-agnostic; family-specific tooling lives in the family. See [`cli/README.md`](cli/README.md). |
 | [`benchmark/`](benchmark/) | The three experiment scripts that regenerate the paper's tables, and the `runs/` output directory. See [`benchmark/README.md`](benchmark/README.md). |
 | [`predicates/`](predicates/) | The predicate families. Each ships a `manifest.json` (the contract: cases, config, and the oracle class it names), an `oracle.py`, a `cases/` directory of inputs, and a `Makefile` if it needs a built oracle. See [`predicates/README.md`](predicates/README.md). |
+| [`Makefile`](Makefile) | Convenience targets: `make clean`, and `make dist` (packages the tracked file set with `git archive`, so a distributed tarball can never carry `__pycache__`, a local venv, or host-built oracle libs). `make help` lists them. |
 
 ## Reproducing in a container (recommended)
 
