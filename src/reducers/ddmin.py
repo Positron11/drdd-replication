@@ -1,6 +1,6 @@
-from typing      import TypeVar, Callable
-from core.oracle import Oracle
-from reducers    import _noop
+from typing         import TypeVar, Callable
+from core.oracle    import Oracle
+from reducers._tick import _noop
 
 
 T = TypeVar("T")

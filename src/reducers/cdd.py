@@ -1,7 +1,7 @@
-from math        import log as ln
-from typing      import TypeVar, Callable
-from core.oracle import Oracle
-from reducers    import _noop
+from math           import log as ln
+from typing         import TypeVar, Callable
+from core.oracle    import Oracle
+from reducers._tick import _noop
 
 
 T = TypeVar("T")
