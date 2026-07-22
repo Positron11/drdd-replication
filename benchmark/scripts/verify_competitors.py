@@ -3,10 +3,10 @@
 
 The paper claims ProbDD and CDD stop short of 1-minimality, unlike drdd. This
 tests it directly: for each subject, regenerate the competitor's reduced output
-and then run the single-element fixed-point reducer — the same verifier used by
-the R-ablation (`causal_chain_scan`) — against the subject's own oracle.
-Any element it removes is one the competitor left behind, so the output was not
-1-minimal; the bytes removed quantify the shortfall.
+and then run the single-element fixed-point scan — `causal_chain_scan`, the same
+verifier the R-ablation uses — against the subject's own oracle. Any element it
+removes is one the competitor left behind, so the output was not 1-minimal; the
+bytes removed quantify the shortfall.
 
 The competitor outputs are not persisted in prior runs (only sizes/calls are),
 so they are regenerated here. Both algorithms are reproducible: CDD is
@@ -26,21 +26,17 @@ per-subject table plus per-family and per-algorithm aggregates. Expand the study
 by editing ALGORITHMS and SUBJECTS below.
 """
 
-import sys
 import time
 
 from pathlib import Path
 
 from core.errors    import DDError
-from reducers       import REDUCERS, tuning_for
-from reducers.drdd  import causal_chain_scan
-from loader         import load_family, Family, Case
+from reducers       import REDUCERS
+from loader         import Family, Case
 from runtime.runner import run_minimization
 from bench.results  import result_dir, write_csv
 
-# the predicate datasets live at the repo root, read as data (never imported)
-_ROOT       = Path(__file__).resolve().parents[2]
-_PREDICATES = _ROOT / "predicates"
+from _common import RUNS, entry, verify_minimal, tuning_for
 
 
 # study configuration (expand here)
@@ -67,31 +63,14 @@ REFERENCE = {
 	"xml/1.1": 401, "xml/3.1": 634, "xml/1.2": 1151,
 }
 
-_RUNS = _ROOT / "benchmark" / "runs"
-
 
 def _generate(family:Family, case:Case, data:bytes, algo:str) -> tuple[bytes, int]:
 	"""Reproduce a competitor's reduced output; return (output, oracle_calls)."""
 
 	oracle = family.oracle(case.config)
-	kwargs = tuning_for(algo, family.tuning)
-	out    = run_minimization(data, REDUCERS[algo], oracle, **kwargs)
+	out    = run_minimization(data, REDUCERS[algo], oracle, **tuning_for(algo, family.tuning))
 
 	return out, oracle.calls
-
-
-def _verify_minimal(family:Family, case:Case, output:bytes) -> tuple[int, int]:
-	"""1-minimal residue of `output` via drdd's single-element fixed-point scan.
-
-	A fresh oracle keeps these verification calls out of the competitor's cost.
-	"""
-
-	oracle = family.oracle(case.config)
-
-	with oracle:
-		minimal = causal_chain_scan(output, oracle)
-
-	return len(minimal), oracle.calls
 
 
 def _aggregate(rows:list[dict], keys:tuple[str, ...]) -> list[dict]:
@@ -134,7 +113,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 	write_csv(_aggregate(rows, ("algorithm",)),          run_dir / "by_algorithm.csv")
 
 	# terminal summary: the non-1-minimality signal per algorithm
-	print(f"\nper-algorithm summary (all families):\n")
+	print("\nper-algorithm summary (all families):\n")
 	print(f"  {'algo':>8}  {'mean_start':>11}  {'mean_reduced':>13}  {'mean_short':>11}  {'1-min frac':>11}")
 
 	for a in _aggregate(rows, ("algorithm",)):
@@ -144,7 +123,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 
 
 def main() -> None:
-	run_dir  = _RUNS / result_dir("competitor_minimality")
+	run_dir  = RUNS / result_dir("competitor_minimality")
 	subjects = [(fam, cid) for fam, ids in SUBJECTS.items() for cid in ids]
 	total    = len(subjects) * len(ALGORITHMS)
 	rows     = []
@@ -161,7 +140,7 @@ def main() -> None:
 
 	try:
 		for fam, cid in subjects:
-			family, case = _entry(fam, cid)
+			family, case = entry(fam, cid)
 			data         = case.path.read_bytes()
 			ref          = REFERENCE.get(f"{fam}/{cid}")
 
@@ -173,7 +152,7 @@ def main() -> None:
 
 				try:
 					output, gen_calls    = _generate(family, case, data, algo)
-					reduced, verify_calls = _verify_minimal(family, case, output)
+					reduced, verify_calls = verify_minimal(family, case, output)
 
 				except DDError as e:
 					rows.append({"family": fam, "subject": cid, "algorithm": algo, "error": str(e)})
@@ -209,17 +188,6 @@ def main() -> None:
 		print("\nInterrupted - writing partial results.\n")
 
 	_write(rows, run_dir)
-
-
-def _entry(fam:str, cid:str) -> tuple[Family, Case]:
-	"""Resolve one case to its (family, case), or abort."""
-
-	family = load_family(_PREDICATES / fam)
-
-	try: case = family.case(cid)
-	except DDError as e: sys.exit(f"  {e}")
-
-	return family, case
 
 
 if __name__ == "__main__":

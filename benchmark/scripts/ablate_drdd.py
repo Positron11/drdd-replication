@@ -23,20 +23,16 @@ per-subject table plus per-family and per-R aggregates, ready for plotting.
 Expand the study by editing R_VALUES and SUBJECTS below.
 """
 
-import sys
 import time
 
 from pathlib        import Path
 from core.errors    import DDError
 from reducers       import REDUCERS
-from reducers.drdd  import causal_chain_scan
-from loader         import load_family, Family, Case
+from loader         import Family, Case
 from runtime.runner import run_minimization
 from bench.results  import result_dir, write_csv
 
-# the predicate datasets live at the repo root, read as data (never imported)
-_ROOT       = Path(__file__).resolve().parents[2]
-_PREDICATES = _ROOT / "predicates"
+from _common import RUNS, entry, verify_minimal
 
 
 # study configuration (expand here)
@@ -55,7 +51,6 @@ SUBJECTS = {
 }
 
 _REDUCER = "drdd"
-_RUNS    = _ROOT / "benchmark" / "runs"
 
 # nominal budget labels, in plotting order
 _FULL  = "|I|"
@@ -97,20 +92,6 @@ def _measure(family:Family, case:Case, data:bytes, iters:int) -> tuple[bytes, in
 	return out, oracle.calls, wall
 
 
-def _verify_minimal(family:Family, case:Case, output:bytes) -> tuple[int, int]:
-	"""1-minimal residue of `output`, via drdd's single-element fixed-point scan.
-
-	A fresh oracle keeps these verification calls out of the cost metric.
-	"""
-
-	oracle = family.oracle(case.config)
-
-	with oracle:
-		minimal = causal_chain_scan(output, oracle)
-
-	return len(minimal), oracle.calls
-
-
 def _aggregate(rows:list[dict], keys:tuple[str, ...]) -> list[dict]:
 	"""Mean cost/quality/minimality grouped by `keys`, in budget order."""
 
@@ -149,7 +130,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 	write_csv(_aggregate(rows, ("R",)),          run_dir / "by_R.csv")
 
 	# terminal summary: the cost/minimality curve across R
-	print(f"\nper-R summary (all families):\n")
+	print("\nper-R summary (all families):\n")
 	print(f"  {'R':>4}  {'mean_calls':>11}  {'mean_out_B':>11}  {'mean_short':>11}  {'1-min frac':>11}")
 
 	for a in _aggregate(rows, ("R",)):
@@ -159,7 +140,7 @@ def _write(rows:list[dict], run_dir:Path) -> None:
 
 
 def main() -> None:
-	run_dir  = _RUNS / result_dir("drdd_ablation")
+	run_dir  = RUNS / result_dir("drdd_ablation")
 	subjects = [(fam, cid) for fam, ids in SUBJECTS.items() for cid in ids]
 	total    = sum(len(_budgets(_size(fam, cid))) for fam, cid in subjects)
 	rows     = []
@@ -177,7 +158,7 @@ def main() -> None:
 
 	try:
 		for fam, cid in subjects:
-			family, case = _entry(fam, cid)
+			family, case = entry(fam, cid)
 			data         = case.path.read_bytes()
 
 			for label, iters in _budgets(len(data)):
@@ -186,7 +167,7 @@ def main() -> None:
 
 				try:
 					out, calls, wall = _measure(family, case, data, iters)
-					minimal, vcalls  = _verify_minimal(family, case, out)
+					minimal, vcalls  = verify_minimal(family, case, out)
 
 				except DDError as e:
 					rows.append({"family": fam, "subject": cid, "R": label, "error": str(e)})
@@ -222,21 +203,10 @@ def main() -> None:
 	_write(rows, run_dir)
 
 
-def _entry(fam:str, cid:str) -> tuple[Family, Case]:
-	"""Resolve one case to its (family, case), or abort."""
-
-	family = load_family(_PREDICATES / fam)
-
-	try: case = family.case(cid)
-	except DDError as e: sys.exit(f"  {e}")
-
-	return family, case
-
-
 def _size(fam:str, cid:str) -> int:
 	"""Input size of one case (for the progress denominator)."""
 
-	return _entry(fam, cid)[1].path.stat().st_size
+	return entry(fam, cid)[1].path.stat().st_size
 
 
 if __name__ == "__main__":
