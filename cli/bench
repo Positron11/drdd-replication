@@ -32,7 +32,18 @@ def main():
 	)
 
 	args = p.parse_args()
-	spec = json.loads(args.spec.read_text()) if args.spec else {}
+
+	# a spec is hand-written, so every way it can be wrong is reported as a
+	# message rather than a traceback - the same contract a manifest gets
+	if args.spec:
+		try:                              spec = json.loads(args.spec.read_text())
+		except FileNotFoundError:         p.error(f"no such spec file: {args.spec}")
+		except json.JSONDecodeError as e: p.error(f"{args.spec}: invalid JSON ({e})")
+		except OSError as e:              p.error(f"{args.spec}: cannot read ({e})")
+
+		if not isinstance(spec, dict): p.error(f"{args.spec}: expected a top-level JSON object")
+
+	else: spec = {}
 
 	reducers = spec.get("reducers") or list(REDUCERS)
 	families = spec.get("families")
