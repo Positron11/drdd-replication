@@ -34,7 +34,8 @@ check-clean:
 
 # Package exactly the tracked set. This is what makes the distributed tarball
 # reproducible: no __pycache__, no *.egg-info, no .venv, no host-built oracle
-# libs, and no .git - which also keeps the artifact anonymous.
+# libs, and no .git - so what a reviewer unpacks is the artifact, not a
+# development directory that happens to contain it.
 dist: check-clean
 	@mkdir -p $(DIST)
 	git archive --format=tar.gz --prefix=$(NAME)/ -o $(DIST)/$(NAME)-$(VERSION).tar.gz HEAD

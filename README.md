@@ -183,7 +183,7 @@ The artifact targets the **Reproducible** badge under the [ISSRE 2026 Call for A
 
 | Badge | How this package supports it |
 |-------|------------------------------|
-| **Available** | Archived with a DOI (see *Data Availability* in the paper) under the MIT [`LICENSE`](LICENSE), and self-contained: all source, all predicate inputs, and all build recipes are included. |
+| **Available** | Archived at [`10.5281/zenodo.21498483`](https://doi.org/10.5281/zenodo.21498483) under the MIT [`LICENSE`](LICENSE), and self-contained: all source, all predicate inputs, and all build recipes are included. |
 | **Reviewed** | Every component documented here is runnable as documented, and the functionality check in [`README.txt`](README.txt) §7 needs no compilation and finishes in about 30 seconds. The reducers are a small, family-agnostic library; new families and cases plug in without touching `src/` (see *Reusability*). A malformed `manifest.json` is diagnosed with a `ConfigError` naming the file and the offending entry rather than crashing or silently dropping a case. |
 | **Reproducible** | [`benchmark/specs/reduced.json`](benchmark/specs/reduced.json) regenerates all four families against all four reducers in ~2.5 h; [`drdd_issre.py`](benchmark/scripts/drdd_issre.py) does the complete ~10 h set, and the two supplementary scripts regenerate the ablation and 1-minimality tables. Each `result.csv` records the `input_sha256` of every subject, so a reproduction carries proof it ran on the shipped inputs. See *Reproducing the paper's results* and *Reproduction caveats*. |
 

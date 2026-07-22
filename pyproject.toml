@@ -12,7 +12,12 @@ description = "Delta Debugging algorithm implementations and benchmark infrastru
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-	{ name = "Anonymous Authors" },
+	{ name = "Aarush Kumbhakern",     email = "aarush.kumbhakern_ug25@ashoka.edu.in" },
+	{ name = "Feiyang Chen",          email = "fche0060@uni.sydney.edu.au" },
+	{ name = "Danushka Liyanage",     email = "danushka.liyanage@sydney.edu.au" },
+	{ name = "Xi Wu",                 email = "xi.wu@sydney.edu.au" },
+	{ name = "Mohammad Amin Alipour", email = "maalipou@central.uh.edu" },
+	{ name = "Rahul Gopinath",        email = "rahul.gopinath@sydney.edu.au" },
 ]
 dependencies = [
 	"defusedxml >= 0.7.1",    # xml/cherrypick (safe XML parsing)

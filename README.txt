@@ -59,11 +59,30 @@ Paper title:   Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred
 
 Submission ID: 238
 
-Authors:       <AUTHORS -- full author list with affiliations and contact
-               email, exactly as on the accepted paper>
-
 Venue:         The 37th International Symposium on Software Reliability
                Engineering (ISSRE 2026), Research Track
+
+Authors:
+
+  Aarush Kumbhakern *          Ashoka University, India
+                               aarush.kumbhakern_ug25@ashoka.edu.in
+
+  Feiyang Chen                 University of Sydney, Australia
+                               fche0060@uni.sydney.edu.au
+
+  Danushka Liyanage *          University of Sydney, Australia
+                               danushka.liyanage@sydney.edu.au
+
+  Xi Wu *                      University of Sydney, Australia
+                               xi.wu@sydney.edu.au
+
+  Mohammad Amin Alipour *      University of Houston, USA
+                               maalipou@central.uh.edu
+
+  Rahul Gopinath *             University of Sydney, Australia
+                               rahul.gopinath@sydney.edu.au
+
+  * corresponding author
 
 
 --------------------------------------------------------------------------------
