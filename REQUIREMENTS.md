@@ -1,7 +1,7 @@
 # Requirements
 
 Hardware and software needed to run this artifact. Installation steps are in
-[`INSTALL.md`](INSTALL.md); what has been verified is in [`STATUS.md`](STATUS.md).
+[`INSTALL.md`](INSTALL.md); the badges claimed and how reproduction is checked are in [`README.txt`](README.txt).
 
 ## Hardware
 

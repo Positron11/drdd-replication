@@ -1,12 +1,12 @@
 # Replication Package — ISSRE '26 Paper 238
 
-This is the replication package for the paper **"Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred Restarts"** (ISSRE 2026, under review). It contains the implementations of every Delta Debugging algorithm evaluated in the paper, the four real-world predicate (bug-reproducer) families used as subjects, and the scripts that regenerate the paper's tables.
+This is the replication package for the paper **"Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred Restarts"** (ISSRE 2026). It contains the implementations of every Delta Debugging algorithm evaluated in the paper, the four real-world predicate (bug-reproducer) families used as subjects, and the scripts that regenerate the paper's tables.
 
 The artifact is structure-agnostic: every reducer treats its input as an opaque byte sequence and learns nothing about the format.
 
 This README is the entry point. It walks from a container or host-native setup through a quick smoke test to the full reproduction, mapping each paper table to the command that regenerates it. Family-specific build and provenance details live in the sub-READMEs linked throughout.
 
-**In a hurry?** [`REQUIREMENTS.md`](REQUIREMENTS.md) lists what you need, [`INSTALL.md`](INSTALL.md) gets it running, [`STATUS.md`](STATUS.md) states the badges claimed.
+**Reviewing this artifact?** Start with [`README.txt`](README.txt) — it is the artifact's entry point and follows the structure the ISSRE 2026 call requires, including a functionality check that needs no compilation. [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`INSTALL.md`](INSTALL.md) go deeper on prerequisites and setup.
 
 ## Overview
 
@@ -163,7 +163,9 @@ The results reproduce deterministically, with two narrow and well-understood exc
 
 - **One binutils case (`21409-2`) is address-space-layout sensitive.** A borderline `objdump` access faults under some memory layouts but not others, so under ASLR this one case is not exactly reproducible: its oracle-call count moves by a few between runs, and with it a few bytes of output for the non-1-minimal competitors (`probdd`, `cdd`). In our runs the `ddmin` and `drdd` output lengths for this case were stable. Pinning the layout with `setarch -R` (which needs `--security-opt seccomp=unconfined` in a container, as the default profile blocks `personality(ADDR_NO_RANDOMIZE)`) makes the case fully deterministic, at the cost of no longer matching the conditions the reported figures were measured under — so we report the ASLR-on numbers and leave the oracle unpinned.
 
-**Runtime.** Per-task time ranges from seconds (binutils, CrashJS) to minutes (FFmpeg, XML — where most candidate inputs are malformed and correctly rejected, so a high reject rate is expected). The paper's full run took **~11 hours** on the reference setup (Fedora Linux x86_64, AMD Ryzen, 64 GB RAM, 2 pinned cores); spot-check a family via `cli/bench` first.
+**Runtime.** Per-task time ranges from seconds (binutils, CrashJS) to minutes (FFmpeg, XML — where most candidate inputs are malformed and correctly rejected, so a high reject rate is expected). The paper's full run took **~11 hours** on the reference setup (Fedora Linux x86_64, AMD Ryzen, 64 GB RAM, 2 pinned cores), of which ~10 h is reduction compute and the balance is oracle builds and setup. Measured per family, for all four reducers: FFmpeg 5.4 h, XML 3.4 h, binutils 0.9 h, CrashJS 0.2 h — FFmpeg alone is 91% concentrated in three cases.
+
+Don't start there. [`benchmark/specs/reduced.json`](benchmark/specs/reduced.json) covers all four families against all four reducers in **~2.2 h** by dropping those three FFmpeg cases and the two larger XML size variants; [`README.txt`](README.txt) §8 documents exactly what it omits and why. For a first check, `cli/bench benchmark/specs/getting-started.json` needs no oracle build at all and finishes in about 30 seconds.
 
 ## Reusability
 
@@ -175,19 +177,19 @@ The library auto-discovers any directory under `predicates/` holding a `manifest
 
 See [`predicates/README.md`](predicates/README.md) for the family/manifest contract and [`cli/README.md`](cli/README.md) for how cases are selected.
 
-## ACM badges
+## Artifact evaluation
 
-This package is structured against the [ACM Artifact Review and Badging policy (current)](https://www.acm.org/publications/policies/artifact-review-and-badging-current):
+The artifact targets the **Reproducible** badge under the [ISSRE 2026 Call for Artifacts](https://cyprusconferences.org/issre2026/cfp-artifacts/), which is hierarchical — Reproducible requires Reviewed, which requires Available. [`README.txt`](README.txt) is the artifact's entry point and carries the eight sections the call mandates; this file is the same material in more depth.
 
 | Badge | How this package supports it |
 |-------|------------------------------|
-| **Artifacts Available** | The complete package is archived with a DOI (see *Data Availability* in the paper) and self-contained: all source, predicate inputs, and build recipes are included. |
-| **Artifacts Evaluated — Functional / Reusable** | Every component documented here is runnable as described. The reducers are a small, family-agnostic library; new predicate families and cases plug in without touching `src/` (see *Reusability*). A malformed `manifest.json` is diagnosed with a `ConfigError` naming the file and the offending entry, rather than crashing or silently dropping a case. |
-| **Results Reproduced** | [`benchmark/scripts/drdd_issre.py`](benchmark/scripts/drdd_issre.py) regenerates the per-case minimized length and oracle-call counts of the paper's main table; the two supplementary scripts regenerate the ablation and verification tables. Each `result.csv` records the `input_sha256` of every subject, so a reproduction attempt carries proof it ran on the shipped inputs. See *Reproducing the paper's results* and *Reproduction caveats*. |
+| **Available** | Archived with a DOI (see *Data Availability* in the paper) under the MIT [`LICENSE`](LICENSE), and self-contained: all source, all predicate inputs, and all build recipes are included. |
+| **Reviewed** | Every component documented here is runnable as documented, and the functionality check in [`README.txt`](README.txt) §7 needs no compilation and finishes in about 30 seconds. The reducers are a small, family-agnostic library; new families and cases plug in without touching `src/` (see *Reusability*). A malformed `manifest.json` is diagnosed with a `ConfigError` naming the file and the offending entry rather than crashing or silently dropping a case. |
+| **Reproducible** | [`benchmark/specs/reduced.json`](benchmark/specs/reduced.json) regenerates all four families against all four reducers in ~2.5 h; [`drdd_issre.py`](benchmark/scripts/drdd_issre.py) does the complete ~10 h set, and the two supplementary scripts regenerate the ablation and 1-minimality tables. Each `result.csv` records the `input_sha256` of every subject, so a reproduction carries proof it ran on the shipped inputs. See *Reproducing the paper's results* and *Reproduction caveats*. |
 
 ## Data provenance
 
-The predicate subjects are derived from public datasets and bug trackers, cited in [`predicates/README.md`](predicates/README.md): XML from the replication artifact of Zhang et al.; FFmpeg from FFmpeg trac tickets at pinned upstream commits; binutils from sourceware bugzilla; CrashJS from the public CrashJS dataset (Zenodo record 10530515). These are citations of others' work and are distinct from the (anonymized) authorship of this artifact.
+The predicate subjects are derived from public datasets and bug trackers, cited in [`predicates/README.md`](predicates/README.md): XML from the replication artifact of Zhang et al.; FFmpeg from FFmpeg trac tickets at pinned upstream commits; binutils from sourceware bugzilla; CrashJS from the public CrashJS dataset (Zenodo record 10530515). These are citations of others' work, distinct from the authorship of this artifact.
 
 ## License
 

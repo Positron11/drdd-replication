@@ -1,0 +1,10 @@
+{
+	"_comment": [
+		"Functionality check for artifact evaluation: the smallest XML case against the",
+		"paper's method and its baseline. XML needs no build - its BaseX jars and inputs",
+		"ship in-tree - so this exercises the whole pipeline with only a JRE, in seconds.",
+		"See section 7 of README.txt."
+	],
+	"reducers": ["ddmin", "drdd"],
+	"families": { "xml": ["1.1"] }
+}

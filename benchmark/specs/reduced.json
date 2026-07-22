@@ -1,0 +1,18 @@
+{
+	"_comment": [
+		"Reduced reproduction: all four families, all four reducers, ~2.2h of compute.",
+		"Fits the ISSRE artifact-evaluation time budget where the full run (~10h) does not.",
+		"Coverage is reduced; the claim structure is not - every family and every reducer",
+		"still appears, so drdd-vs-baseline and the competitors' loss of 1-minimality are",
+		"both reproducible on all four subject families.",
+		"Omitted, purely on wall-clock: ffmpeg 10701/10745/10758 (55m/134m/109m for the",
+		"four reducers - 91% of that family's cost), and XML size variants 2 and 3 of each",
+		"case, keeping variant 1. Run benchmark/scripts/drdd_issre.py for the complete set."
+	],
+	"families": {
+		"binutils": [],
+		"crashjs": [],
+		"ffmpeg": ["10686", "10688", "10691", "10699", "10702", "10744", "10746", "10747", "10749", "10754", "10756"],
+		"xml": ["1.1", "2.1", "3.1", "4.1", "5.1"]
+	}
+}
