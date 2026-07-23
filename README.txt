@@ -4,8 +4,9 @@ ISSRE 2026 ARTIFACT -- Dr. DD: 1-Minimal Isolation of Failure Causes via
 ================================================================================
 
 This file is the artifact's entry point and follows the structure required by
-the ISSRE 2026 Call for Artifacts. README.md contains the same material in
-greater depth, with cross-links; nothing here depends on reading it.
+the ISSRE 2026 Call for Artifacts. It is self-contained; nothing here
+depends on reading any other file. README.md is the repository landing page
+(orientation and a documentation map).
 
 
 --------------------------------------------------------------------------------
@@ -122,7 +123,7 @@ about the format, so results are not the product of format-specific tricks.
 --------------------------------------------------------------------------------
 
   README.txt         This file.
-  README.md          The same material with more depth and cross-links.
+  README.md          Repository landing page: orientation and a doc map.
   INSTALL.md         Installation, both container and native.
   REQUIREMENTS.md    Hardware and software prerequisites, per family.
   LICENSE            MIT.

@@ -23,7 +23,7 @@ Case ids come from each family's `manifest.json` (binutils/ffmpeg ids are bug/ti
 
 Runs the four reported reducers (`ddmin`, `probdd`, `cdd`, `drdd`) against every case of all four families, writing one run dir per family — the main table. To check a reproduction, compare the per-case `minimized_length` and oracle-call columns of the generated `result.csv` against the corresponding rows of the paper's tables (Table II / `tab:oracles` for size and oracle calls). The deterministic reducers (`ddmin`, `cdd`, `drdd`) should match the reported `(length, oracle-call)` pairs exactly.
 
-Two documented exceptions, both detailed under *Reproduction caveats* in the [root README](../README.md): ProbDD's RNG seed is fixed at `0`, so it re-runs identically on a given host but is only stable *across* hosts insofar as the NumPy RNG and floating-point results agree; and one binutils case (`21409-2`) is ASLR-sensitive, so its oracle-call count moves by a few between runs, and with it a few bytes of output for the non-1-minimal competitors.
+Two documented exceptions, both detailed in [`../README.txt`](../README.txt) section 8: ProbDD's RNG seed is fixed at `0`, so it re-runs identically on a given host but is only stable *across* hosts insofar as the NumPy RNG and floating-point results agree; and one binutils case (`21409-2`) is ASLR-sensitive, so its oracle-call count moves by a few between runs, and with it a few bytes of output for the non-1-minimal competitors.
 
 ```bash
 python benchmark/scripts/drdd_issre.py

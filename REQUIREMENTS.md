@@ -1,7 +1,6 @@
 # Requirements
 
-Hardware and software needed to run this artifact. Installation steps are in
-[`INSTALL.md`](INSTALL.md); the badges claimed and how reproduction is checked are in [`README.txt`](README.txt).
+Hardware and software needed to run this artifact. Installation steps are in [`INSTALL.md`](INSTALL.md); the badges claimed and how reproduction is checked are in [`README.txt`](README.txt).
 
 ## Hardware
 
@@ -12,16 +11,11 @@ Hardware and software needed to run this artifact. Installation steps are in
 | Memory | 8 GB is comfortable; the reference runs used 64 GB |
 | Network | Required at build time only — each family's `Makefile` fetches upstream sources. The container image, once built, runs offline. |
 
-The paper's reference figures were measured on Fedora Linux 43 (kernel 6.19,
-x86_64), an AMD Ryzen AI 9 HX PRO 370 workstation with 64 GB of RAM, driven by
-Python 3.14, with each task run sequentially on a single core. A full four-family reproduction takes **~11 hours**
-on that setup.
+The paper's reference figures were measured on Fedora Linux 43 (kernel 6.19, x86_64), an AMD Ryzen AI 9 HX PRO 370 workstation with 64 GB of RAM, driven by Python 3.14, with each task run sequentially on a single core. A full four-family reproduction takes **~11 hours** on that setup.
 
 ## Software
 
-The recommended path is the bundled [`Dockerfile`](Dockerfile), which freezes
-everything below and bakes in all four oracle libraries. It builds with Podman or
-Docker and needs none of the host toolchain.
+The recommended path is the bundled [`Dockerfile`](Dockerfile), which freezes everything below and bakes in all four oracle libraries. It builds with Podman or Docker and needs none of the host toolchain.
 
 Running natively instead requires:
 
@@ -35,13 +29,11 @@ Running natively instead requires:
 | Java 11+ (JRE is enough) | the XML family's BaseX servers at run time |
 | `git`, `make` | fetching and building the upstream oracle sources |
 
-Python dependencies (`defusedxml`, `saxonche`, `numpy`) are declared in
-[`pyproject.toml`](pyproject.toml) and installed by `pip install -e .`.
+Python dependencies (`defusedxml`, `saxonche`, `numpy`) are declared in [`pyproject.toml`](pyproject.toml) and installed by `pip install -e .`.
 
 ## Running only part of it
 
-Nothing above is all-or-nothing — build only the families you intend to run, and
-a family whose oracle is missing is reported and skipped so the rest still run.
+Nothing above is all-or-nothing — build only the families you intend to run, and a family whose oracle is missing is reported and skipped so the rest still run.
 
 | Want to run | Needs |
 |---|---|
@@ -50,13 +42,8 @@ a family whose oracle is missing is reported and skipped so the rest still run.
 | Binutils | `gcc`, `flex`, `bison`, `m4`, and time for the build |
 | FFmpeg | `clang` + compiler-rt, and the largest build of the four |
 
-XML is the cheapest way to confirm the package works, since it needs no build at
-all; CrashJS is the fastest to actually run once built.
+XML is the cheapest way to confirm the package works, since it needs no build at all; CrashJS is the fastest to actually run once built.
 
 ## Known environmental caveat
 
-The FFmpeg oracle is an AddressSanitizer build. On some recent kernels ASan
-cannot map its shadow memory under high-entropy ASLR; if the FFmpeg family aborts
-at startup with an ASan mmap/shadow-memory message, lower the host setting once
-with `sudo sysctl -w vm.mmap_rnd_bits=28` and re-run. A container shares the host
-kernel, so this is set on the host, not in the image.
+The FFmpeg oracle is an AddressSanitizer build. On some recent kernels ASan cannot map its shadow memory under high-entropy ASLR; if the FFmpeg family aborts at startup with an ASan mmap/shadow-memory message, lower the host setting once with `sudo sysctl -w vm.mmap_rnd_bits=28` and re-run. A container shares the host kernel, so this is set on the host, not in the image.

@@ -1,31 +1,27 @@
-# Replication Package — ISSRE '26 Paper 238
+# Dr. DD — Replication Package (ISSRE 2026, Paper 238)
 
-This is the replication package for the paper **"Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred Restarts"** (ISSRE 2026). It contains the implementations of every Delta Debugging algorithm evaluated in the paper, the four real-world predicate (bug-reproducer) families used as subjects, and the scripts that regenerate the paper's tables.
+Replication package for **"Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred Restarts."** It contains every Delta Debugging reducer the paper evaluates, the four real-world predicate (bug-reproducer) families used as subjects, and the scripts that regenerate the paper's tables. Every reducer treats its input as an opaque byte sequence and learns nothing about the format.
 
-The artifact is structure-agnostic: every reducer treats its input as an opaque byte sequence and learns nothing about the format.
+The headline result: **`drdd` matches the classical `ddmin` baseline's reduction quality while using a fraction of the oracle calls** — 1.7% on XML, 50% on FFmpeg — and, unlike ProbDD and CDD, without giving up 1-minimality.
 
-This README is the entry point. It walks from a container or host-native setup through a quick smoke test to the full reproduction, mapping each paper table to the command that regenerates it. Family-specific build and provenance details live in the sub-READMEs linked throughout.
+> **Start here.** This page is the repository landing — orientation and a map. The **formal artifact document is [`README.txt`](README.txt)**, which follows the eight-section structure the ISSRE 2026 call requires and is self-contained (setup, a no-toolchain functionality check, and the full reproduction). For setup depth see [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`INSTALL.md`](INSTALL.md).
 
-**Reviewing this artifact?** Start with [`README.txt`](README.txt) — it is the artifact's entry point and follows the structure the ISSRE 2026 call requires, including a functionality check that needs no compilation. [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`INSTALL.md`](INSTALL.md) go deeper on prerequisites and setup.
+## Reducers
 
-## Overview
-
-### Reducers
-
-Four reducers are implemented under [`src/reducers/`](src/reducers/), one per algorithm the paper evaluates.
+Four reducers under [`src/reducers/`](src/reducers/), one per algorithm the paper evaluates.
 
 | Reducer | Paper ref. | Strategy | Literature |
-|---------|------------|----------|------|
+|---------|------------|----------|------------|
 | [`ddmin`](src/reducers/ddmin.py)  | `ddmin`$^Y$ | Classical halving complement sweep with restart-after-success | Zeller & Hildebrandt |
 | [`drdd`](src/reducers/drdd.py)    | **Dr. DD** | Halving complement sweep + deferred single-element causal-chain scan | — |
 | [`probdd`](src/reducers/probdd.py)| ProbDD | Per-element removal probabilities, updated on each rejection | [Wang et al.](https://doi.org/10.1145/3468264.3468625) |
 | [`cdd`](src/reducers/cdd.py)      | CDD | Deterministic counter-driven partition schedule (no restarts) | [Zhang et al.](https://doi.org/10.1109/ICSE55347.2025.00117) |
 
-> **Note on naming.** The paper writes the simplified classical baseline as `ddmin`$^Y$ (the *Why Programs Fail* / Fuzzingbook form). In this code it is the reducer named `ddmin`. The paper's contribution, `drdd`, is "Dr. DD".
+> **Naming.** The paper writes the simplified classical baseline as `ddmin`$^Y$ (the *Why Programs Fail* / Fuzzingbook form); in this code it is the reducer named `ddmin`. The paper's contribution, `drdd`, is "Dr. DD".
 
-### Predicates
+## Predicates
 
-The reducers are evaluated against four predicate families, each a self-contained plugin under [`predicates/`](predicates/).
+Four families of subjects, each a self-contained plugin under [`predicates/`](predicates/). Inputs ship in-tree; the oracle binaries are built from pinned upstream source by each family's `Makefile` (or baked into the container). Per-family build and provenance detail is in [`predicates/README.md`](predicates/README.md).
 
 | Family | Cases | Bug type |
 |--------|-------|----------|
@@ -34,163 +30,47 @@ The reducers are evaluated against four predicate families, each a self-containe
 | [Binutils](predicates/binutils/) | 12 cases | SIGSEGV / glibc heap corruption in `readelf`, `objdump`, `objcopy`, `nm` |
 | [CrashJS](predicates/crashjs/) | 11 cases | `TypeError` reproduction in an instrumented `lodash` build |
 
-All predicate inputs are shipped in-tree. The oracle binaries/libraries are *not* shipped — they are built from upstream source by each family's `Makefile`; the per-family build steps are documented in [`predicates/README.md`](predicates/README.md).
-
 ## Repository layout
 
-| Path | Description |
-|------|-------------|
-| [`src/`](src/) | The installable, family-agnostic library: reducers, the oracle/family contracts, the predicate plugin loader, the minimization runner, loggers, and the benchmark harness. |
-| [`cli/`](cli/) | Command-line entry points: `minimize` (one case, any reducer) and `bench` (spec-selected subset run). Both are family-agnostic; family-specific tooling lives in the family. See [`cli/README.md`](cli/README.md). |
-| [`benchmark/`](benchmark/) | The three experiment scripts that regenerate the paper's tables, and the `runs/` output directory. See [`benchmark/README.md`](benchmark/README.md). |
-| [`predicates/`](predicates/) | The predicate families. Each ships a `manifest.json` (the contract: cases, config, and the oracle class it names), an `oracle.py`, a `cases/` directory of inputs, and a `Makefile` if it needs a built oracle. See [`predicates/README.md`](predicates/README.md). |
-| [`Makefile`](Makefile) | Convenience targets: `make clean`, and `make dist` (packages the tracked file set with `git archive`, so a distributed tarball can never carry `__pycache__`, a local venv, or host-built oracle libs). `make help` lists them. |
+| Path | What it is | Documented in |
+|------|------------|---------------|
+| [`src/`](src/) | The installable, family-agnostic library: reducers, the oracle/family contracts, the plugin loader, the runner, and the benchmark harness. | — |
+| [`predicates/`](predicates/) | The four subject families. Each is a `manifest.json` contract plus an `oracle.py`, its input `cases/`, and a `Makefile` where a build is needed. | [`predicates/README.md`](predicates/README.md) |
+| [`cli/`](cli/) | `minimize` (one case, one reducer) and `bench` (a spec-selected matrix). Both family-agnostic. | [`cli/README.md`](cli/README.md) |
+| [`benchmark/`](benchmark/) | The three experiment scripts that regenerate the paper's tables, the reproduction specs, and the `runs/` output. | [`benchmark/README.md`](benchmark/README.md) |
+| [`Dockerfile`](Dockerfile) | A reproduction image that bakes in all four oracles. | [`README.txt`](README.txt) §7 |
+| [`Makefile`](Makefile) | `make dist` (package the tracked file set), `make clean`. `make help` lists them. | — |
 
-## Reproducing in a container (recommended)
+## Quick start
 
-The bundled [`Dockerfile`](Dockerfile) freezes the whole environment — OS, Python, Java, `clang`, the binutils build tools, and Node — and **bakes in all four oracle libraries at build time**. A reviewer then needs none of the host toolchain or per-family builds described under *Running locally* below. The image is standard OCI and builds with either [Podman](https://podman.io) (rootless, the default on Fedora) or Docker; the commands are identical apart from the binary name.
-
-```bash
-# Build the image. Clones binutils-gdb + FFmpeg 
-# and compiles an ASan FFmpeg, so needs network 
-# access and ~30-60 min the first time; the image 
-# is several GB.
-podman build -t drdd .
-
-# Regenerate the main table (one result.csv per 
-# family); mount a host dir so the output survives 
-# the container. The :Z suffix relabels the mount 
-# for SELinux (required on Fedora/RHEL; harmless 
-# on other hosts and ignored by Docker).
-podman run --rm -v "$PWD/runs:/artifact/benchmark/runs:Z" drdd python benchmark/scripts/drdd_issre.py
-
-# Or open a shell and run anything from the sections 
-# below interactively (no setup required):
-podman run --rm -it drdd
-```
-
-> **AddressSanitizer note.** The FFmpeg oracle is an ASan build. On some recent kernels ASan cannot map its shadow memory under high-entropy ASLR; if the FFmpeg family aborts at startup with an ASan mmap/shadow-memory message, lower the host setting once with `sudo sysctl -w vm.mmap_rnd_bits=28` and re-run (the container shares the host kernel, so this is set on the host, not in the image).
-
-Every command in the rest of this README works unchanged inside the container shell (the package is already `pip install -e .`'d into the image). To run directly on a host instead of the container, see *Running locally* below.
-
-## Running locally
-
-Host-native setup needs:
-
-- Linux, x86_64
-- Python ≥ 3.11
-- Network access (the family `Makefile`s clone/download upstream sources)
-- Several GB of free disk (the binutils and FFmpeg builds clone large upstream repos)
-
-Set up the Python environment from the repository root:
+No toolchain, about 70 seconds — the XML family needs only a JRE, since its BaseX jars ship in-tree:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e . # installs the dependencies and the library itself
+python3 -m venv .venv && source .venv/bin/activate && pip install -e .
+cli/bench benchmark/specs/getting-started.json
 ```
-> **Executable permissions.** The `cli/*` scripts ship with the executable bit set, but some archive tools (and `unzip`) drop it on extraction. If you get a `Permission denied`, restore it once with `chmod +x cli/*`.
 
+The `result.csv` it writes reproduces row T-1e9bc83-1-1 of the paper's Table II exactly — `ddmin` 396 B / 32,567 calls and `drdd` 401 B / 1,618 calls. Full setup and the tiered reproduction (≈30 s / ≈2.2 h / ≈10 h) are in [`README.txt`](README.txt) §7–§8.
 
-The editable install puts the library packages (`reducers`, `loader`, `bench`, ...) on the import path — as long as the venv is active, every command below works as written. Keep the venv active (`source .venv/bin/activate`) in each shell, and run the commands from the repository root — they're written with repo-root-relative paths like `cli/minimize` and `make -C predicates/...`. The dependencies (`defusedxml`, `saxonche`, `numpy`) are declared in [`pyproject.toml`](pyproject.toml).
+## Reproducing the paper
 
-### Building the oracle libraries
-
-Each family builds its oracle from upstream source; build only the ones you intend to run:
-
-| Family | Build command | Toolchain needed |
-|--------|---------------|------------------|
-| XML | N/A | Java 11+ at run time (for the bundled BaseX servers; Saxon ships inside the `saxonche` wheel) |
-| FFmpeg | `make -C predicates/ffmpeg` | `clang` (builds an ASan FFmpeg from source at two pinned commits) |
-| Binutils | `make -C predicates/binutils` | `gcc` plus `flex`, `bison`, `m4` |
-| CrashJS | `make -C predicates/crashjs` | `node` (any modern version; tested on Node 22) |
-
-> **Binutils gotcha.** Without `flex`/`bison`/`m4` the build fails with `Error 127`. If a build is interrupted, a stale `config.cache` can cause a later `"YACC has changed since the previous run"` error — recover with `rm -rf predicates/binutils/build/build-*` and rebuild.
-
-## Smoke check
-
-Start with the cheapest family to confirm the toolchain works end to end. CrashJS is the fastest — seconds to about a minute per `(case × reducer)`.
+[`README.txt`](README.txt) §8 is the authoritative guide. In brief: build the oracle libs you need (`make -C predicates/<family>`), then
 
 ```bash
-# 1. Build one fast oracle lib
-make -C predicates/crashjs
-
-# 2. Minimize a single case with the paper's method, then with the baseline
-cli/minimize crashjs 9 --reducer drdd  --verbose   # 217 B,    982 calls
-cli/minimize crashjs 9 --reducer ddmin --verbose   # 226 B,  8,493 calls
+cli/bench benchmark/specs/reduced.json      # all 4 families × 4 reducers, ~2.2 h
+python benchmark/scripts/drdd_issre.py      # the complete ~10 h main table
 ```
 
-From a 444 B input, `drdd` reaches a 1-minimal output for **~12% of the oracle calls** `ddmin` needs — the paper's core claim, visible on a single case. Both outputs are 1-minimal; note that 1-minimality is a *local* property, so distinct local minima need not be the same size, which is why the two lengths differ slightly.
+The three scripts in [`benchmark/scripts/`](benchmark/scripts/) map to the paper's tables — the main table (`drdd_issre.py`), the restart-budget study (`ablate_drdd.py`, Table V), and the lost-minimality study (`verify_competitors.py`, Table IV); see [`benchmark/README.md`](benchmark/README.md). The deterministic reducers reproduce their `(size, oracle-call)` pairs exactly; the two narrow exceptions (ProbDD's seed sensitivity and the ASLR-sensitive binutils `21409-2`) are documented in [`README.txt`](README.txt) §8.
 
-## Reproducing the paper's results
+## Extending it
 
-The full reproduction is driven by three scripts in [`benchmark/scripts/`](benchmark/scripts/). Each writes a timestamped directory under `benchmark/runs/`. Build the oracle lib for each family you want to include first; a family whose lib is missing is reported and skipped, so the rest still run.
-
-```bash
-# Build the three oracle libs that aren't prebuilt 
-# (skip any family you don't need); XML needs no 
-# build step.
-make -C predicates/ffmpeg
-make -C predicates/binutils
-make -C predicates/crashjs
-
-# Main reproduction: minimized length + oracle 
-# calls per (family × case × reducer)
-python benchmark/scripts/drdd_issre.py
-
-# Supplementary studies
-python benchmark/scripts/ablate_drdd.py
-python benchmark/scripts/verify_competitors.py
-```
-
-### What each script reproduces
-
-The scripts (run as shown in the block above) map to the paper as follows:
-
-| Script | Reproduces | Output |
-|--------|------------|--------|
-| [`drdd_issre.py`](benchmark/scripts/drdd_issre.py) | **Main table** — per-case minimized size, oracle calls, and (derived) wall-clock time / relative metrics for `ddmin`, `drdd`, `probdd`, `cdd` (paper Tables I–III) | One run dir per family with `result.csv` (per-task minimized length + oracle calls + wall time) and full per-run logs |
-| [`ablate_drdd.py`](benchmark/scripts/ablate_drdd.py) | **Restart-budget RQ** — effect of `R ∈ {1,2,4,8,∣I∣}` on oracle calls, output size, and 1-minimality (paper Table V) | `results.csv` plus per-family and per-`R` aggregate CSVs |
-| [`verify_competitors.py`](benchmark/scripts/verify_competitors.py) | **Lost-minimality RQ** — bytes a single-element fixed-point scan still removes from `probdd`/`cdd` outputs (paper Table IV) | `results.csv` quantifying how far each competitor stops short of 1-minimality |
-
-**Checking a match.** The deterministic reducers (`ddmin`, `drdd`, `cdd`) should reproduce the paper's `(minimized_length, oracle-calls)` pairs **exactly** — compare `result.csv` against Table II (`tab:oracles`). The two documented exceptions are below.
-
-## Reproduction caveats
-
-The results reproduce deterministically, with two narrow and well-understood exceptions — neither affects any conclusion in the paper:
-
-- **`probdd` is stochastic by design, but pinned for replication.** ProbDD is a probabilistic algorithm; we fix its RNG seed to `0` (the default in [`src/reducers/probdd.py`](src/reducers/probdd.py)), so every run is reproducible and re-running yields identical oracle-call counts rather than shifting figures. Its numbers should match the reported ones on the same platform; they are only guaranteed stable *across* hosts insofar as the NumPy RNG and floating-point results agree. Removing the seed restores the run-to-run variation inherent to the algorithm.
-
-- **One binutils case (`21409-2`) is address-space-layout sensitive.** A borderline `objdump` access faults under some memory layouts but not others, so under ASLR this one case is not exactly reproducible: its oracle-call count moves by a few between runs, and with it a few bytes of output for the non-1-minimal competitors (`probdd`, `cdd`). In our runs the `ddmin` and `drdd` output lengths for this case were stable. Pinning the layout with `setarch -R` (which needs `--security-opt seccomp=unconfined` in a container, as the default profile blocks `personality(ADDR_NO_RANDOMIZE)`) makes the case fully deterministic, at the cost of no longer matching the conditions the reported figures were measured under — so we report the ASLR-on numbers and leave the oracle unpinned.
-
-**Runtime.** Per-task time ranges from seconds (binutils, CrashJS) to minutes (FFmpeg, XML — where most candidate inputs are malformed and correctly rejected, so a high reject rate is expected). The paper's full run took **~11 hours** on the reference setup (Fedora Linux x86_64, AMD Ryzen, 64 GB RAM, 2 pinned cores), of which ~10 h is reduction compute and the balance is oracle builds and setup. Measured per family, for all four reducers: FFmpeg 5.4 h, XML 3.4 h, binutils 0.9 h, CrashJS 0.2 h — FFmpeg alone is 91% concentrated in three cases.
-
-Don't start there. [`benchmark/specs/reduced.json`](benchmark/specs/reduced.json) covers all four families against all four reducers in **~2.2 h** by dropping those three FFmpeg cases and the two larger XML size variants; [`README.txt`](README.txt) §8 documents exactly what it omits and why. For a first check, `cli/bench benchmark/specs/getting-started.json` needs no oracle build at all and finishes in about 30 seconds.
-
-## Reusability
-
-The library auto-discovers any directory under `predicates/` holding a `manifest.json`, and does what that manifest says — it names the family, the `Oracle` class implementing its predicate, the command that builds whatever the oracle needs, and the cases. So **new families and cases plug in without any change under `src/`**:
-
-- **A new case** in an existing family: add its input under `cases/<id>/` and an entry in that family's `manifest.json`. It is then selectable as `cli/minimize <family> <id>` and included in benchmark runs.
-
-- **A new family**: create `predicates/<name>/` with a `manifest.json`, the `oracle.py` it names, `cases/`, and (if it needs a built oracle) a `Makefile`.
-
-See [`predicates/README.md`](predicates/README.md) for the family/manifest contract and [`cli/README.md`](cli/README.md) for how cases are selected.
+The loader discovers any directory under `predicates/` holding a `manifest.json` and does what the manifest says, so **a new case or an entire new family plugs in with no change under `src/`**. The contract is specified in [`predicates/README.md`](predicates/README.md).
 
 ## Artifact evaluation
 
-The artifact targets the **Reproducible** badge under the [ISSRE 2026 Call for Artifacts](https://cyprusconferences.org/issre2026/cfp-artifacts/), which is hierarchical — Reproducible requires Reviewed, which requires Available. [`README.txt`](README.txt) is the artifact's entry point and carries the eight sections the call mandates; this file is the same material in more depth.
+Targets the **Reproducible** badge (ISSRE's hierarchy: Reproducible ⊃ Reviewed ⊃ Available). Archived at [`10.5281/zenodo.21498483`](https://doi.org/10.5281/zenodo.21498483) under the MIT [`LICENSE`](LICENSE). The badge case is made in [`README.txt`](README.txt) §2.
 
-| Badge | How this package supports it |
-|-------|------------------------------|
-| **Available** | Archived at [`10.5281/zenodo.21498483`](https://doi.org/10.5281/zenodo.21498483) under the MIT [`LICENSE`](LICENSE), and self-contained: all source, all predicate inputs, and all build recipes are included. |
-| **Reviewed** | Every component documented here is runnable as documented, and the functionality check in [`README.txt`](README.txt) §7 needs no compilation and finishes in about 30 seconds. The reducers are a small, family-agnostic library; new families and cases plug in without touching `src/` (see *Reusability*). A malformed `manifest.json` is diagnosed with a `ConfigError` naming the file and the offending entry rather than crashing or silently dropping a case. |
-| **Reproducible** | [`benchmark/specs/reduced.json`](benchmark/specs/reduced.json) regenerates all four families against all four reducers in ~2.5 h; [`drdd_issre.py`](benchmark/scripts/drdd_issre.py) does the complete ~10 h set, and the two supplementary scripts regenerate the ablation and 1-minimality tables. Each `result.csv` records the `input_sha256` of every subject, so a reproduction carries proof it ran on the shipped inputs. See *Reproducing the paper's results* and *Reproduction caveats*. |
+## Provenance & license
 
-## Data provenance
-
-The predicate subjects are derived from public datasets and bug trackers, cited in [`predicates/README.md`](predicates/README.md): XML from the replication artifact of Zhang et al.; FFmpeg from FFmpeg trac tickets at pinned upstream commits; binutils from sourceware bugzilla; CrashJS from the public CrashJS dataset (Zenodo record 10530515). These are citations of others' work, distinct from the authorship of this artifact.
-
-## License
-
-Released under the MIT License — see [`LICENSE`](LICENSE).
+Predicate subjects derive from public datasets and bug trackers — XML from Zhang et al.'s artifact, FFmpeg from trac tickets at pinned commits, binutils from sourceware Bugzilla, CrashJS from Zenodo record 10530515 — cited per family in [`predicates/README.md`](predicates/README.md) and distinct from this artifact's authorship. Released under the MIT License; see [`LICENSE`](LICENSE).
