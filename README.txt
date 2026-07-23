@@ -359,11 +359,37 @@ studies. Reproduction is offered at two scales.
     identically on a given host; across hosts, NumPy RNG and floating-point
     differences can shift its counts. Treat its rows as indicative.
 
-    Binutils case 21409-2 is address-space-layout sensitive. A borderline
-    objdump access faults under some memory layouts and not others, so its
-    oracle-call count moves by a few between runs, and with it a few bytes of
-    output for the non-1-minimal competitors. In our runs the ddmin and drdd
-    output lengths for this case were stable.
+    Binutils case 21409-2 is address-space-layout sensitive. Its oracle detects
+    the bug as a SIGSEGV from a borderline out-of-bounds access in `objdump -SD`
+    that faults only under some memory layouts. Three consequences, all expected
+    and none affecting a conclusion:
+
+      - ddmin and drdd reproduce this case: their outputs fault under
+        essentially every layout, so their reduced size is stable and their
+        oracle-call count moves by only a few between runs (we observed +2 and
+        +3 against the paper).
+
+      - probdd and cdd may instead FAIL this one case, reporting "minimized
+        output no longer reproduces the predicate" with no row in result.csv.
+        This is not a defect: these reducers drive the input to the very edge of
+        where the access still faults, and the runner's final, uncounted
+        re-check of the result then happens to run under a layout where it does
+        not. The reduction itself tracks the paper (it reached the paper's exact
+        2,353 oracle calls before the re-check); only the safety-net
+        verification is layout-sensitive. A re-run may pass, or produce a row a
+        few bytes off the reported one.
+
+      - The pinned-layout alternative. Running the oracle under `setarch -R`
+        (ASLR disabled) makes the case fully deterministic, including for probdd
+        and cdd. We leave it unpinned so the run matches the conditions the
+        paper's figures were measured under; a reviewer who prefers a
+        deterministic 21409-2 can prepend `setarch -R` to the command in
+        predicates/binutils/oracle.py (inside a container this also needs
+        `--security-opt seccomp=unconfined`, as the default profile blocks the
+        personality(ADDR_NO_RANDOMIZE) syscall it uses).
+
+    This is the single case out of 52 that does not reproduce cell-for-cell; the
+    other 51 reproduce their deterministic (size, oracle-call) pairs exactly.
 
 8.4 THE SUPPLEMENTARY STUDIES
 
