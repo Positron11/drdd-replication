@@ -97,25 +97,25 @@ without losing the failure -- using substantially fewer oracle queries than
 the classical ddmin baseline, while the efficient competitors ProbDD and CDD
 reach their speed by giving up 1-minimality.
 
-The artifact lets a reviewer confirm exactly that:
+The artifact supports three checks:
 
-  (a) Run any of the four reducers against any of the 52 subjects, and see the
-      minimized output size and the number of oracle calls it cost.
+  (a) Run any of the four reducers against any of the 52 subjects, and read the
+      minimized output size and the number of oracle calls it took.
 
-  (b) Check 1-minimality directly rather than taking a reducer's word for it.
-      `causal_chain_scan` drives a single-element sweep to a fixed point
-      against a fresh oracle; whatever it still removes is what the reducer
-      left behind. This is the measurement behind the paper's Table IV.
+  (b) Check 1-minimality directly. `causal_chain_scan` drives a single-element
+      sweep to a fixed point against a fresh oracle; whatever it removes is what
+      the reducer left behind. This is the measurement behind the paper's
+      Table IV.
 
   (c) Regenerate the paper's tables and compare against the reported figures.
 
-Concretely, on CrashJS case 9 (a 444-byte input), drdd reaches a 1-minimal
-217 bytes in 982 oracle calls where ddmin needs 8,493 -- about 12% of the
-cost. Both outputs are 1-minimal; they differ slightly in size because
-1-minimality is a local property, so distinct local minima need not be equal.
+On CrashJS case 9 (a 444-byte input), drdd reaches a 1-minimal 217 bytes in 982
+oracle calls where ddmin needs 8,493. Both outputs are 1-minimal; they differ
+in size because 1-minimality is a local property, so distinct local minima need
+not be equal.
 
-Every reducer treats its input as an opaque byte sequence and knows nothing
-about the format, so results are not the product of format-specific tricks.
+Every reducer treats its input as an opaque byte sequence, so results do not
+depend on format-specific handling.
 
 
 --------------------------------------------------------------------------------
@@ -213,9 +213,9 @@ Software -- native route
     Python dependencies (defusedxml, saxonche, numpy) are declared in
     pyproject.toml and installed by `pip install -e .`.
 
-Nothing is all-or-nothing: build only the families you intend to run. A family
-whose oracle is missing is reported and skipped, and the rest still run. XML
-needs no build at all -- its BaseX jars ship in-tree.
+Build only the families you intend to run. A family whose oracle is missing is
+reported and skipped, and the rest still run. XML needs no build -- its BaseX
+jars ship in-tree.
 
 Reference platform for the figures reported in the paper: Fedora Linux 43
 (kernel 6.19, x86_64) on an AMD Ryzen AI 9 HX PRO 370 workstation with 64 GB of
@@ -238,10 +238,10 @@ Total time: under two minutes -- about 10 seconds to install, about 70 seconds
 to run. No compilation, no toolchain, no downloads beyond the three Python
 dependencies.
 
-The XML family is used here precisely because it needs no build step: its
-BaseX jars and inputs ship in the artifact, so it exercises the entire
-pipeline -- manifest loading, oracle construction, reduction, and the runner's
-check that the result still reproduces -- with only a JRE.
+The XML family needs no build step: its BaseX jars and inputs ship in the
+artifact, so it exercises the whole pipeline -- manifest loading, oracle
+construction, reduction, and the runner's re-check that the result still
+reproduces -- with only a JRE.
 
   Step 1: install
 
@@ -260,31 +260,25 @@ check that the result still reproduces -- with only a JRE.
       1.1        ddmin    396               32567
       1.1        drdd     401               1618
 
-  These are not illustrative numbers. They are row T-1e9bc83-1-1 of the
-  paper's Table II, reproduced exactly -- both the reduced size and the oracle
-  count, for both reducers. So the functionality check is also, on one
-  subject, a reproduction check: if these four numbers match, the artifact is
-  running the same algorithms over the same input as the paper.
+  These are row T-1e9bc83-1-1 of the paper's Table II, reproduced exactly for
+  both reducers, so the functionality check doubles as a one-row reproduction
+  check. From the 1,391-byte input drdd reaches a 1-minimal result in 1,618
+  oracle calls against ddmin's 32,567 -- 4.97% of the cost, the value Table III
+  reports for this row.
 
-  It is also the paper's claim in miniature. From a 1,391-byte input drdd
-  reaches a 1-minimal result in 1,618 oracle calls where ddmin needs 32,567 --
-  4.97% of the cost, the figure Table III reports for this row.
-
-  Note that drdd's output is slightly *larger* here (401 b vs 396 b), as the
-  paper's own table shows. That is expected and is not a defect: 1-minimality
-  is a local property, so two distinct local minima need not be the same size,
-  and neither dominates the other. The paper claims a cost advantage at equal
-  reduction quality, not the globally smallest output -- which delta debugging
-  does not promise. On CrashJS case 9, the ordering reverses: drdd's 217 b is
+  drdd's output is larger here (401 b vs 396 b), as the paper's table shows.
+  1-minimality is a local property, so two local minima need not be the same
+  size; the paper claims a cost advantage at equal reduction quality, not the
+  smallest output. On CrashJS case 9 the ordering reverses: drdd's 217 b is
   smaller than ddmin's 226 b.
 
-If instead you are using the container, the equivalent is:
+Container equivalent:
 
       podman build -t drdd .        # 30-60 min, builds all four oracles
       podman run --rm drdd cli/bench benchmark/specs/getting-started.json
 
-  Note that the image build itself substantially exceeds the 30-minute
-  guidance; the native route above is the fast path for a functionality check.
+  The image build exceeds the 30-minute guidance; the native route above is the
+  fast path for a functionality check.
 
 Troubleshooting
 
@@ -310,9 +304,8 @@ studies. Reproduction is offered at two scales.
 
 8.1 REDUCED REPRODUCTION -- about 2.2 hours of compute, plus build time
 
-    Covers all four families and all four reducers, so every claim in the
-    paper is exercised on every subject family. Coverage is reduced; the claim
-    structure is not.
+    Covers all four families and all four reducers, so every claim in the paper
+    is exercised on every subject family, at reduced per-family coverage.
 
         make -C predicates/crashjs        # ~2 min
         make -C predicates/binutils       # ~20 min
@@ -362,35 +355,31 @@ studies. Reproduction is offered at two scales.
 
     Binutils case 21409-2 is address-space-layout sensitive. Its oracle detects
     the bug as a SIGSEGV from a borderline out-of-bounds access in `objdump -SD`
-    that faults only under some memory layouts. Three consequences, all expected
-    and none affecting a conclusion:
+    that faults only under some memory layouts. Three consequences:
 
-      - ddmin and drdd reproduce this case: their outputs fault under
-        essentially every layout, so their reduced size is stable and their
-        oracle-call count moves by only a few between runs (we observed +2 and
-        +3 against the paper).
+      - ddmin and drdd reproduce this case. Their outputs fault under nearly
+        every layout, so their reduced size is stable and their oracle-call
+        count moves by only a few between runs (we observed +2 and +3 against
+        the paper).
 
-      - probdd and cdd may instead FAIL this one case, reporting "minimized
+      - probdd and cdd may instead fail this one case, reporting "minimized
         output no longer reproduces the predicate" with no row in result.csv.
-        This is not a defect: these reducers drive the input to the very edge of
-        where the access still faults, and the runner's final, uncounted
-        re-check of the result then happens to run under a layout where it does
-        not. The reduction itself tracks the paper (it reached the paper's exact
-        2,353 oracle calls before the re-check); only the safety-net
-        verification is layout-sensitive. A re-run may pass, or produce a row a
-        few bytes off the reported one.
+        These reducers drive the input to the edge of where the access still
+        faults, and the runner's final uncounted re-check then runs under a
+        layout where it does not. The reduction reaches the paper's 2,353 oracle
+        calls before the re-check; only the re-check is layout-sensitive. A
+        re-run may pass, or produce a row a few bytes off the reported one.
 
-      - The pinned-layout alternative. Running the oracle under `setarch -R`
-        (ASLR disabled) makes the case fully deterministic, including for probdd
-        and cdd. We leave it unpinned so the run matches the conditions the
-        paper's figures were measured under; a reviewer who prefers a
-        deterministic 21409-2 can prepend `setarch -R` to the command in
-        predicates/binutils/oracle.py (inside a container this also needs
+      - Running the oracle under `setarch -R` (ASLR disabled) makes the case
+        deterministic, including for probdd and cdd. It is left unpinned so the
+        run matches the conditions the paper's figures were measured under. To
+        pin it, prepend `setarch -R` to the command in
+        predicates/binutils/oracle.py (in a container this also needs
         `--security-opt seccomp=unconfined`, as the default profile blocks the
-        personality(ADDR_NO_RANDOMIZE) syscall it uses).
+        personality(ADDR_NO_RANDOMIZE) syscall).
 
-    This is the single case out of 52 that does not reproduce cell-for-cell; the
-    other 51 reproduce their deterministic (size, oracle-call) pairs exactly.
+    This is the one case of 52 that does not reproduce cell-for-cell; the other
+    51 reproduce their deterministic (size, oracle-call) pairs exactly.
 
 8.4 THE SUPPLEMENTARY STUDIES
 
@@ -399,8 +388,8 @@ studies. Reproduction is offered at two scales.
     resolves causal chains to a fixed point and is 1-minimal.
 
     verify_competitors.py regenerates each competitor's output and drives the
-    single-element fixed-point scan over it. Whatever comes off is what the
-    competitor left behind -- the paper's non-1-minimality result.
+    single-element fixed-point scan over it. What it removes is what the
+    competitor left behind: the paper's non-1-minimality result.
 
     Both accept a smaller subject set by editing SUBJECTS at the top of the
     script, if their default sets exceed the time available.

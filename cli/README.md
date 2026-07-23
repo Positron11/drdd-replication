@@ -4,7 +4,7 @@ Command-line tools for minimization and benchmarking. Both are family-agnostic â
 
 ## `minimize`
 
-Minimizes one predicate input with a DD-family reducer. The case is selected from its family's `manifest.json` by id â€” the input path and oracle config come from the manifest, so the script never hard-codes predicate paths.
+Minimizes one predicate input with a DD-family reducer. The case is selected from its family's `manifest.json` by id; the input path and oracle config come from the manifest.
 
 ```
 usage: minimize <family> <case> [--reducer NAME] [--output PATH] [--verbose]

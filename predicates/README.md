@@ -36,13 +36,13 @@ The library auto-discovers any directory holding a `manifest.json` and does what
 }
 ```
 
-Every path is relative to the family, `build` included: it says only *what* to run, since where to run it is the family's own directory — which a manifest cannot name without hardcoding where it happens to sit. The loader supplies the location, so a family loaded from anywhere reports a command that works. The resolved command reaches every case's config, and an oracle names it when an artifact is missing: `require(path, build=config.get("build"))`.
+Every path is relative to the family, `build` included. The loader resolves `build` against the family's directory, so an oracle can report the command when its artifact is missing: `require(path, build=config.get("build"))`.
 
-Nothing is guessed from the layout. The oracle class is named and looked up, rather than the loader importing the module and searching it for whatever happens to subclass `Oracle`, so a family may keep as many classes as it likes.
+The oracle class is named in the manifest and looked up by name, not found by scanning the module for an `Oracle` subclass, so a family may define more than one.
 
-**The directory and the manifest answer different questions.** The directory is where a family lives and how one is selected — `minimize <family> <case>` resolves a path under `predicates/`. The manifest says what the family is *called*: `name` is read from it, never inferred, so a family's identity travels with its data.
+A family is selected by directory name — `minimize <family> <case>` resolves a path under `predicates/` — but its `name` is read from the manifest, not inferred from the directory.
 
-A manifest is hand-edited, so every way one can be malformed — invalid JSON, a missing `name`/`id`/`path`, a duplicate case id, an unresolvable `oracle` ref, a `files` key colliding with a config key — is reported as a `ConfigError` naming the file and the offending entry, rather than crashing or silently dropping a case.
+Manifests are hand-edited, so each way one can be malformed — invalid JSON, a missing `name`/`id`/`path`, a duplicate case id, an unresolvable `oracle` ref, a `path` or `files` entry escaping the family, a `files` key colliding with a config key — is reported as a `ConfigError` naming the file and the offending entry, not a crash or a silently dropped case.
 
 **Case ids.** Each predicate's `id` is how the CLIs select a case (`minimize <family> <id>`, or a benchmark spec's case lists). Ids are the bug/ticket numbers for binutils and ffmpeg, `1`–`11` for crashjs, and `<case>.<variant>` (`1.1`–`5.3`) for the xml size variants.
 
@@ -52,9 +52,9 @@ A manifest is hand-edited, so every way one can be malformed — invalid JSON, a
 "tuning": { "p_0": 0.45 }
 ```
 
-`p_0` is roughly how removable the inputs are: binutils `0.8`, crashjs `0.45`, xml `0.25`, ffmpeg `0.01`. Each reducer receives a property only if its signature has a parameter for it, so `probdd` and `cdd` read `p_0` and the rest ignore it. The manifest names no reducer, so the pool stays ignorant of the roster; the mapping lives in [`tuning_for`](../src/reducers/__init__.py). A reducer's own knobs — `drdd`'s `c_iters` (the ablation axis), `probdd`'s `seed` (the reproducibility anchor) — are not input properties and stay out of manifests.
+`p_0` is roughly how removable the inputs are: binutils `0.8`, crashjs `0.45`, xml `0.25`, ffmpeg `0.01`. Each reducer receives a property only if its signature has a parameter for it, so `probdd` and `cdd` read `p_0` and the rest ignore it. The manifest names no reducer; the mapping from property to reducer is in [`tuning_for`](../src/reducers/__init__.py). A reducer's own knobs — `drdd`'s `c_iters`, `probdd`'s `seed` — are not input properties and stay out of manifests.
 
-**The oracle contract.** [`core.Oracle`](../src/core/oracle.py) counts every call — *oracle calls* is the benchmark's universal cost metric. A family implements `_call`; a stateful one also overrides `__enter__`/`__exit__` to hold servers or subprocesses open across a run.
+**The oracle contract.** [`core.Oracle`](../src/core/oracle.py) counts every call; oracle calls are the benchmark's cost metric. A family implements `_call`; a stateful one also overrides `__enter__`/`__exit__` to hold servers or subprocesses open across a run.
 
 ## XML
 
@@ -96,7 +96,7 @@ usage: cherrypick <case-dir> [--input FILE] [--output FILE]
   --max-consecutive-fails stop after N consecutive oracle rejections (default: 50)
 ```
 
-It lives here rather than in [`cli/`](../cli/) because it is this family's: it cannot run against any other. `minimize` and `bench` are family-agnostic; this is not.
+It lives here, not in [`cli/`](../cli/), because it only works for this family. `minimize` and `bench` are family-agnostic.
 
 ## FFmpeg
 

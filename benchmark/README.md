@@ -14,7 +14,7 @@ Two ready-made `cli/bench` specs sit in [`specs/`](specs/), for reviewers who do
 | `cli/bench benchmark/specs/reduced.json` | all four families × four reducers, minus the three costliest FFmpeg cases and the larger XML variants | ~2.2 h + builds |
 | `python benchmark/scripts/drdd_issre.py` | all 52 subjects × four reducers — the complete main table | ~10 h + builds |
 
-`reduced.json` names exactly what it omits and why, inline. The full guide, including what each tier is for and the reproduction caveats, is [`../README.txt`](../README.txt) §8.
+`reduced.json` records what it omits and why, inline. The full guide is [`../README.txt`](../README.txt) §8.
 
 ## Prerequisites
 
