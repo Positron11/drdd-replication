@@ -4,6 +4,18 @@ Reproduces the paper's results (Dr. DD, ISSRE 2026). The experiments live in `be
 
 For ad-hoc, spec-selected runs (a subset of reducers/families/cases) use the general `cli/bench` tool instead — see [cli/README.md](../cli/README.md).
 
+## Reproduction at three scales
+
+Two ready-made `cli/bench` specs sit in [`specs/`](specs/), for reviewers who don't want the full ~10 h run. Both are plain JSON and editable.
+
+| Command | Covers | Cost |
+|---------|--------|------|
+| `cli/bench benchmark/specs/getting-started.json` | XML case `1.1`, `ddmin` + `drdd` — reproduces one Table II row | ~70 s, **no oracle build** (XML jars ship in-tree) |
+| `cli/bench benchmark/specs/reduced.json` | all four families × four reducers, minus the three costliest FFmpeg cases and the larger XML variants | ~2.2 h + builds |
+| `python benchmark/scripts/drdd_issre.py` | all 52 subjects × four reducers — the complete main table | ~10 h + builds |
+
+`reduced.json` names exactly what it omits and why, inline. The full guide, including what each tier is for and the reproduction caveats, is [`../README.txt`](../README.txt) §8.
+
 ## Prerequisites
 
 Each family's oracle needs its lib built first (the scripts skip or abort on a missing one). XML is the exception — its BaseX jars and inputs ship in-tree, so it needs no build, only a JRE at run time:

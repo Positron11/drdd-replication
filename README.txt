@@ -41,7 +41,7 @@ Available    The artifact is archived at
 
 Reviewed     Every component documented here is runnable as documented.
              Section 7 gives a functionality check that needs no compilation
-             and completes in well under a minute.
+             and completes in about 70 seconds.
 
 Reproducible Section 8 regenerates the paper's per-case results. The three
              deterministic reducers (ddmin, cdd, drdd) reproduce their
@@ -308,7 +308,7 @@ The paper's results are per-case pairs of (minimized_length,
 oracle_invocations) for four reducers over 52 subjects, plus two supplementary
 studies. Reproduction is offered at two scales.
 
-8.1 REDUCED REPRODUCTION -- about 2.5 hours of compute, plus build time
+8.1 REDUCED REPRODUCTION -- about 2.2 hours of compute, plus build time
 
     Covers all four families and all four reducers, so every claim in the
     paper is exercised on every subject family. Coverage is reduced; the claim

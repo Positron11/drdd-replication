@@ -50,7 +50,7 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -e .
 cli/bench benchmark/specs/getting-started.json
 ```
 
-The `result.csv` it writes reproduces row T-1e9bc83-1-1 of the paper's Table II exactly — `ddmin` 396 B / 32,567 calls and `drdd` 401 B / 1,618 calls. Full setup and the tiered reproduction (≈30 s / ≈2.2 h / ≈10 h) are in [`README.txt`](README.txt) §7–§8.
+The `result.csv` it writes reproduces row T-1e9bc83-1-1 of the paper's Table II exactly — `ddmin` 396 B / 32,567 calls and `drdd` 401 B / 1,618 calls. Full setup and the tiered reproduction (≈70 s / ≈2.2 h / ≈10 h) are in [`README.txt`](README.txt) §7–§8.
 
 ## Reproducing the paper
 
