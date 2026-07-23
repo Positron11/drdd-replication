@@ -9,8 +9,13 @@
 #   podman run --rm drdd python benchmark/scripts/drdd_issre.py  # regenerate the main table
 #
 # The build clones binutils-gdb and FFmpeg and compiles an AddressSanitizer
-# FFmpeg from source, so it needs network access and roughly 10-30 minutes the
+# FFmpeg from source, so it needs network access and roughly 30-60 minutes the
 # first time; the resulting image is a few GB.
+#
+# Two runtime caveats that a build cannot freeze, both documented in README.txt
+# section 8: binutils case 21409-2 is ASLR-sensitive (the container shares the
+# host's ASLR), and the ASan FFmpeg may need `vm.mmap_rnd_bits=28` set on the
+# host if it cannot map its shadow memory.
 
 FROM ubuntu:24.04
 
@@ -49,6 +54,15 @@ RUN pip install --no-cache-dir -e .
 # "Permission denied" inside the container. predicates/xml/cherrypick is the
 # XML family's own seed-variant generator.
 RUN chmod +x cli/minimize cli/bench predicates/xml/cherrypick
+
+# Fail fast. Import the library and resolve all four family manifests and their
+# oracle plugins (which also imports saxonche for xml) before the slow oracle
+# builds below - so a broken package or manifest surfaces in seconds, not after
+# half an hour of compilation. Constructing an oracle needs its built binary;
+# loading a family does not, so this runs here safely.
+RUN python -c "from pathlib import Path; from loader import load_family; \
+	[load_family(Path('predicates')/f) for f in ('xml','ffmpeg','binutils','crashjs')]; \
+	print('library + all four manifests OK')"
 
 # Build the three oracle libs that are not shipped prebuilt (xml ships its BaseX
 # jars in-tree and needs no build), one layer each so a failure in a later family
