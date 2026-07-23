@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drdd-replication"
-version = "0.1.0"
+version = "1.0.0"
 description = "Replication package for 'Dr. DD: 1-Minimal Isolation of Failure Causes via Deferred Restarts' (ISSRE 2026)"
 readme = "README.md"
 requires-python = ">=3.11"
