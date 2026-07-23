@@ -25,13 +25,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 #
 #   python3             # the runner, the probdd reducer (numpy), the xml driver
 #   default-jre         # BaseX servers for the xml oracle (its jars ship in-tree)
-#   clang               # builds the AddressSanitizer FFmpeg 
+#   clang               # builds the AddressSanitizer FFmpeg
 #   libclang-rt-18-dev  # provides libclang_rt.asan*.a, which the ASan link needs
 #   gcc flex bison m4   # builds binutils (it generates lexers/parsers)
+#   file                # binutils' libtool probes binary types with it; without
+#                       #   it, libtool falls back and the configure step is noisy
 #   git curl tar make   # fetch and build the upstream oracle sources
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates git curl tar xz-utils make \
+        ca-certificates git curl tar xz-utils make file \
         python3 python3-pip python3-venv \
         default-jre-headless \
         clang libclang-rt-18-dev \
